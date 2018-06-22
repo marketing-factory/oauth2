@@ -43,6 +43,10 @@ class OAuth2LoginService extends AbstractService
      * @var ?AccessToken
      */
     private $currentAccessToken;
+    /**
+     * @var array
+     */
+    private $extensionConfig;
 
     /**
      * @param $subType
@@ -56,6 +60,8 @@ class OAuth2LoginService extends AbstractService
         array $authenticationInformation,
         AbstractUserAuthentication &$parentObject
     ) {
+        $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+
         $this->loginData = $loginData;
         $this->authenticationInformation = $authenticationInformation;
         $this->parentObject = $parentObject;
@@ -133,10 +139,10 @@ class OAuth2LoginService extends AbstractService
         }
 
         $this->oauthProvider = new Gitlab([
-            'clientId' => 'ae8dd2d3b2a031c460789ceae92392b5085e7837f8297697db3ffdee69a360f0',
-            'clientSecret' => '0fdf0fa53b35c0e247a5522aa541e6c34125149749a9ae39f3db42a9be102d54',
-            'redirectUri' => 'http://127.0.0.1:8080/typo3/index.php?loginProvider=1529672977&login_status=login&oauth-provider=gitlab',
-            'domain' => 'https://gitlab.hellmund.eu:2443',
+            'clientId' => $this->extensionConfig['gitlabAppId'],
+            'clientSecret' => $this->extensionConfig['gitlabAppSecret'],
+            'redirectUri' => GeneralUtility::locationHeaderUrl('/typo3/index.php?loginProvider=1529672977&login_status=login&oauth-provider=' . $providerName),
+            'domain' => $this->extensionConfig['gitlabServer'],
         ]);
     }
 
