@@ -1,0 +1,14 @@
+# cat=Gitlab//1; type=string; label=Auth token
+gitlabAuthToken =
+
+# cat=Gitlab//2; type=string; label=gitlab server address
+gitlabServer =
+
+# cat=Gitlab//3; type=string; label=Project repository name
+gitlabRepositoryName =
+
+# cat=Gitlab//4; type=boolean; label=override existing user
+overrideUser = 0
+
+# cat=Gitlab//5; type=int; label=standard user group of new user
+defaultGroup =

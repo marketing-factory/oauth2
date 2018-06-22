@@ -1,0 +1,26 @@
+{
+  "name": "mfc/oauth2",
+  "type": "typo3-cms-extension",
+  "description": "",
+  "homepage": "https://www.marketing-factory.de",
+  "license": [
+    "MIT"
+  ],
+  "keywords": [
+    "TYPO3 CMS",
+    "OAuth"
+  ],
+  "autoload": {
+    "psr-4": {
+      "Mfc\\OAuth2\\": "Classes/"
+    }
+  },
+  "require": {
+    "php": "^7.2",
+    "league/oauth2-client": "^2.3",
+    "omines/oauth2-gitlab": "^3.1",
+    "symfony/config": "^4.1",
+    "typo3/cms-core": "^8.7",
+    "typo3/cms-beuser": "^8.7"
+  }
+}
