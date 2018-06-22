@@ -3,16 +3,15 @@ declare(strict_types=1);
 
 namespace Mfc\OAuth2\Services;
 
-use Gitlab\Client;
-use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
-use Omines\OAuth2\Client\Provider\Gitlab;
+use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
+use Mfc\OAuth2\ResourceServer\GitLab;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Http\RequestFactory;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Service\AbstractService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -36,11 +35,6 @@ class OAuth2LoginService extends AbstractService
      * @var AbstractUserAuthentication
      */
     private $parentObject;
-
-    /**
-     * @var AbstractProvider
-     */
-    private $oauthProvider;
     /**
      * @var ?AccessToken
      */
@@ -49,6 +43,10 @@ class OAuth2LoginService extends AbstractService
      * @var array
      */
     private $extensionConfig;
+    /**
+     * @var AbstractResourceServer
+     */
+    private $resourceServer;
 
     /**
      * @param $subType
@@ -86,18 +84,17 @@ class OAuth2LoginService extends AbstractService
         $this->initializeOAuthProvider($oauthProvider);
 
         if (empty($_GET['state'])) {
-            $this->sendOAuthRedirect($oauthProvider);
+            $this->sendOAuthRedirect();
             exit;
         } elseif ($this->isOAuthRedirectRequest()) {
-            $this->currentAccessToken = $this->oauthProvider->getAccessToken('authorization_code', [
-                'code' => GeneralUtility::_GET('code')
-            ]);
+            $this->currentAccessToken = $this->resourceServer->getOAuthProvider()->getAccessToken('authorization_code',
+                [
+                    'code' => GeneralUtility::_GET('code')
+                ]);
 
             if ($this->currentAccessToken instanceof AccessToken) {
                 try {
-                    $user = $this->oauthProvider->getResourceOwner($this->currentAccessToken);
-                    $userData = $user->toArray();
-
+                    $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
                     $record = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
 
                     return $record;
@@ -113,17 +110,29 @@ class OAuth2LoginService extends AbstractService
         return null;
     }
 
-    public function authUser(array $userRecord)
+    private function initializeOAuthProvider($oauthProvider)
     {
-        $result = 100;
-
-        if ($userRecord['oauth_identifier'] !== '') {
-            if ($this->currentAccessToken instanceof AccessToken) {
-                $result = 200;
-            }
+        switch ($oauthProvider) {
+            case 'gitlab':
+                $this->resourceServer = new GitLab(
+                    $this->extensionConfig['gitlabAppId'],
+                    $this->extensionConfig['gitlabAppSecret'],
+                    'gitlab',
+                    $this->extensionConfig['gitlabServer'],
+                    $this->extensionConfig['gitlabRepositoryName']
+                );
+                break;
         }
+    }
 
-        return $result;
+    /**
+     * @return string
+     */
+    private function sendOAuthRedirect()
+    {
+        $authorizationUrl = $this->resourceServer->getAuthorizationUrl();
+        $_SESSION['oauth2state'] = $this->resourceServer->getOAuthProvider()->getState();
+        HttpUtility::redirect($authorizationUrl, HttpUtility::HTTP_STATUS_303);
     }
 
     private function isOAuthRedirectRequest()
@@ -133,61 +142,21 @@ class OAuth2LoginService extends AbstractService
     }
 
     /**
-     * @param string $providerName
-     */
-    private function initializeOAuthProvider(string $providerName)
-    {
-        if ($this->oauthProvider instanceof AbstractProvider) {
-            return;
-        }
-
-        $this->oauthProvider = new Gitlab([
-            'clientId' => $this->extensionConfig['gitlabAppId'],
-            'clientSecret' => $this->extensionConfig['gitlabAppSecret'],
-            'redirectUri' => GeneralUtility::locationHeaderUrl('/typo3/index.php?loginProvider=1529672977&login_status=login&oauth-provider=' . $providerName),
-            'domain' => $this->extensionConfig['gitlabServer'],
-        ]);
-    }
-
-    /**
-     * @param string $providerName
-     * @return string
-     */
-    private function sendOAuthRedirect(string $providerName)
-    {
-        $authorizationUrl = $this->oauthProvider->getAuthorizationUrl([
-            'scope' => ['api', 'read_user','openid']
-        ]);
-
-        $_SESSION['oauth2state'] = $this->oauthProvider->getState();
-        HttpUtility::redirect($authorizationUrl, HttpUtility::HTTP_STATUS_303);
-    }
-
-    private function getResourceOwnerAccessLevel(ResourceOwnerInterface $user): int
-    {
-        /** @var Client $gitlabClient */
-        $gitlabClient = $user->getApiClient();
-
-        $member = $gitlabClient->projects->member('Zenobio/test-project-1', $user->getId());
-        return (int)$member['access_level'];
-    }
-
-    /**
      * @param ResourceOwnerInterface $user
      * @param string $providerName
      * @return array
      */
     private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): array
     {
-        $userData = $user->toArray();
-        $oauthIdentifier = $providerName . '|' . $userData['id'];
+        $oauthIdentifier = $this->resourceServer->getOAuthIdentifier($user);
 
         // Try to find the user first by its OAuth Identifier
         /** @var QueryBuilder $queryBuilder */
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable($this->authenticationInformation['db_user']['table']);
         $queryBuilder->getRestrictions()
-            ->removeAll();
+            ->removeAll()
+            ->add(new DeletedRestriction());
 
         $record = $queryBuilder
             ->select('*')
@@ -215,14 +184,14 @@ class OAuth2LoginService extends AbstractService
                         $queryBuilder->expr()->eq(
                             'username',
                             $queryBuilder->createNamedParameter(
-                                $userData['username'],
+                                $this->resourceServer->getUsernameFromUser($user),
                                 Connection::PARAM_STR
                             )
                         ),
                         $queryBuilder->expr()->eq(
                             'email',
                             $queryBuilder->createNamedParameter(
-                                $userData['email'],
+                                $this->resourceServer->getEmailFromUser($user),
                                 Connection::PARAM_STR
                             )
                         )
@@ -235,31 +204,67 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
-            // User still not found. Create it.
-            $accessLevel = $this->getResourceOwnerAccessLevel($user);
-
-            $user = [
-                'crdate' => time(),
-                'tstamp' => time(),
-                'pid' => 0,
-                'username' => substr($providerName . '_' . $userData['username'], 0, 50),
-                'password' => 'invalid',
-                'admin' => (int)($accessLevel >= 30),
-                'oauth_identifier' => $oauthIdentifier
-            ];
+            $record = $this->resourceServer->updateUserRecord($user);
 
             $queryBuilder->insert(
                 $this->authenticationInformation['db_user']['table']
             )
-                ->values($user)
+                ->values($record)
                 ->execute();
 
             $record = $this->parentObject->fetchUserRecord(
                 $this->authenticationInformation['db_user'],
                 $user['username']
             );
+        } else {
+            if (/* should update permissions */ true) {
+                $record = array_merge(
+                    $record,
+                    [
+                        'admin' => (int)$this->resourceServer->userShouldBeAdmin($user),
+                        'disable' => 0,
+                        'starttime' => 0,
+                        'endtime' => 0,
+                        'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
+                    ]
+                );
+            }
+
+            $record = $this->resourceServer->updateUserRecord($user, $record);
+
+            $qb = $queryBuilder->update(
+                $this->authenticationInformation['db_user']['table']
+            )
+                ->where(
+                    $queryBuilder->expr()->eq(
+                        'uid',
+                        $queryBuilder->createNamedParameter(
+                            $record['uid'],
+                            Connection::PARAM_STR
+                        )
+                    )
+                );
+
+            foreach ($record as $key => $value) {
+                $qb->set($key, $value);
+            }
+
+            $qb->execute();
         }
 
         return $record;
+    }
+
+    public function authUser(array $userRecord)
+    {
+        $result = 100;
+
+        if ($userRecord['oauth_identifier'] !== '') {
+            if ($this->currentAccessToken instanceof AccessToken) {
+                $result = 200;
+            }
+        }
+
+        return $result;
     }
 }
