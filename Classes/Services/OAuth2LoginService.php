@@ -4,9 +4,13 @@ declare(strict_types=1);
 namespace Mfc\OAuth2\Services;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
-use League\OAuth2\Client\Provider\GenericProvider;
+use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use League\OAuth2\Client\Token\AccessToken;
 use Omines\OAuth2\Client\Provider\Gitlab;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Service\AbstractService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -35,6 +39,10 @@ class OAuth2LoginService extends AbstractService
      * @var AbstractProvider
      */
     private $oauthProvider;
+    /**
+     * @var ?AccessToken
+     */
+    private $currentAccessToken;
 
     /**
      * @param $subType
@@ -73,18 +81,22 @@ class OAuth2LoginService extends AbstractService
             $this->sendOAuthRedirect($oauthProvider);
             exit;
         } elseif ($this->isOAuthRedirectRequest()) {
-            $token = $this->oauthProvider->getAccessToken('authorization_code', [
+            $this->currentAccessToken = $this->oauthProvider->getAccessToken('authorization_code', [
                 'code' => GeneralUtility::_GET('code')
             ]);
 
-            try {
-                $user = $this->oauthProvider->getResourceOwner($token);
-                var_dump($user);
-                die();
-                return [];
-            } catch (\Exception $ex) {
-                throw $ex;
+            if ($this->currentAccessToken instanceof AccessToken) {
+                try {
+                    $user = $this->oauthProvider->getResourceOwner($this->currentAccessToken);
+                    $userData = $user->toArray();
+
+                    $user = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
+                    return $user;
+                } catch (\Exception $ex) {
+                    return false;
+                }
             }
+
         } else {
             unset($_SESSION['oauth2state']);
         }
@@ -92,10 +104,15 @@ class OAuth2LoginService extends AbstractService
         return null;
     }
 
-    public function authUser()
+    public function authUser(array $userRecord)
     {
         $result = 100;
 
+        if ($userRecord['oauth_identifier'] !== '') {
+            if ($this->currentAccessToken instanceof AccessToken) {
+                $result = 200;
+            }
+        }
 
         return $result;
     }
@@ -135,5 +152,94 @@ class OAuth2LoginService extends AbstractService
 
         $_SESSION['oauth2state'] = $this->oauthProvider->getState();
         HttpUtility::redirect($authorizationUrl, HttpUtility::HTTP_STATUS_303);
+    }
+
+    /**
+     * @param ResourceOwnerInterface $user
+     * @param string $providerName
+     * @return array
+     */
+    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): array
+    {
+        $userData = $user->toArray();
+        $oauthIdentifier = $providerName . '|' . $userData['id'];
+
+        // Try to find the user first by its OAuth Identifier
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($this->authenticationInformation['db_user']['table']);
+        $queryBuilder->getRestrictions()
+            ->removeAll();
+
+        $record = $queryBuilder
+            ->select('*')
+            ->from($this->authenticationInformation['db_user']['table'])
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'oauth_identifier',
+                    $queryBuilder->createNamedParameter(
+                        $oauthIdentifier,
+                        Connection::PARAM_STR
+                    )
+                ),
+                $this->authenticationInformation['db_user']['check_pid_clause'],
+                $this->authenticationInformation['db_user']['enable_clause']
+            )
+            ->execute()
+            ->fetch();
+
+        if (!$record) {
+            $record = $queryBuilder
+                ->select('*')
+                ->from($this->authenticationInformation['db_user']['table'])
+                ->where(
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->eq(
+                            'username',
+                            $queryBuilder->createNamedParameter(
+                                $userData['username'],
+                                Connection::PARAM_STR
+                            )
+                        ),
+                        $queryBuilder->expr()->eq(
+                            'email',
+                            $queryBuilder->createNamedParameter(
+                                $userData['email'],
+                                Connection::PARAM_STR
+                            )
+                        )
+                    ),
+                    $this->authenticationInformation['db_user']['check_pid_clause'],
+                    $this->authenticationInformation['db_user']['enable_clause']
+                )
+                ->execute()
+                ->fetch();
+        }
+
+        if (!is_array($record)) {
+            // User still not found. Create it.
+            $user = [
+                'crdate' => time(),
+                'tstamp' => time(),
+                'pid' => 0,
+                'username' => $providerName . '_' . $userData['username'],
+                'password' => 'invalid',
+                'admin' => 1,
+                'oauth_identifier' => $oauthIdentifier
+            ];
+
+            $queryBuilder->insert(
+                $this->authenticationInformation['db_user']['table']
+            )
+                ->values($user)
+                ->execute();
+
+            $record = $this->parentObject->fetchUserRecord(
+                $this->authenticationInformation['db_user'],
+                $user['username']
+            );
+        }
+
+        return $record;
     }
 }
