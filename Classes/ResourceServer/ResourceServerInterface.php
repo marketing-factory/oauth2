@@ -31,16 +31,33 @@ interface ResourceServerInterface
 
     /**
      * @param ResourceOwnerInterface $user
+     * @return \DateTime|null
+     */
+    public function userExpiresAt(ResourceOwnerInterface $user): ?\DateTime;
+
+    /**
+     * @param ResourceOwnerInterface $user
+     * @return bool
+     */
+    public function userIsActive(ResourceOwnerInterface $user): bool;
+
+    /**
+     * @param ResourceOwnerInterface $user
      * @return string
      */
     public function getOAuthIdentifier(ResourceOwnerInterface $user): string;
 
     /**
      * @param ResourceOwnerInterface $user
-     * @param array|null $currentRecord
+     */
+    public function loadUserDetails(ResourceOwnerInterface $user): void;
+
+    /**
+     * @param ResourceOwnerInterface $user
+     * @param array $currentRecord
      * @return array
      */
-    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord = null): array;
+    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord): array;
 
     /**
      * @param ResourceOwnerInterface $user

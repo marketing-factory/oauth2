@@ -3,8 +3,17 @@
     <file source-language="en" datatype="plaintext" original="messages" date="2012-08-31T17:54:12Z" product-name="lang">
         <header/>
         <body>
-            <trans-unit id="login.link">
+            <trans-unit id="oauth2.login.link">
                 <source>Login with OAuth</source>
+            </trans-unit>
+            <trans-unit id="oauth2.login.button.gitlab">
+                <source>Login with GitLab</source>
+            </trans-unit>
+            <trans-unit id="oauth2.login.error.message">
+                <source>Your login attempt did not succeed</source>
+            </trans-unit>
+            <trans-unit id="oauth2.login.error.description">
+                <source>Make sure to correctly log in at the external system.</source>
             </trans-unit>
         </body>
     </file>

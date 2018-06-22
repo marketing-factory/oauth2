@@ -1,9 +1,15 @@
 <f:layout name="OAuth2Login" />
 <f:section name="loginFormFields">
     <div class="form-group t3js-login-oauth-section" id="t3-login-oauth_url-section">
-        <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="gitlab">Log in with GitLab</button>
-<!--
-        <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="twitter">Log in with Twitter</button>
--->
+        <f:if condition="{hasOAuthLoginError}">
+            <div class="t3js-login-error" id="t3-login-error">
+                <div class="alert alert-danger">
+                    <strong><f:translate key="oauth2.login.error.message" extensionName="oauth2" /></strong>
+                    <p><f:translate key="oauth2.login.error.description" extensionName="oauth2" /></p>
+                </div>
+            </div>
+        </f:if>
+
+        <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="gitlab"><f:translate key="oauth2.login.button.gitlab" extensionName="oauth2" /></button>
     </div>
 </f:section>

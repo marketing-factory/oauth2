@@ -28,6 +28,11 @@ class GitLab extends AbstractResourceServer
      * @var string
      */
     private $projectName;
+    private $userDetailsLoaded = false;
+    /**
+     * @var array
+     */
+    private $gitlabProjectMember;
 
     /**
      * GitLab constructor.
@@ -79,20 +84,34 @@ class GitLab extends AbstractResourceServer
      */
     public function userShouldBeAdmin(ResourceOwnerInterface $user): bool
     {
-        if (!$user instanceof GitlabResourceOwner) {
-            throw new \InvalidArgumentException(
-                'Resource owner "' . (string)$user . '" is no suitable GitLab resource owner'
-            );
+        $this->loadUserDetails($user);
+        if (!is_array($this->gitlabProjectMember)) {
+            return false;
         }
 
-        /** @var Client $gitlabClient */
-        $gitlabClient = $user->getApiClient();
-
-        $member = $gitlabClient->projects->member($this->projectName, $user->getId());
-        $accessLevel = $member['access_level'];
+        $accessLevel = $this->gitlabProjectMember['access_level'];
 
         // Grant admin access from Developer level onwards
         return $accessLevel >= 30;
+    }
+
+    /**
+     * @param ResourceOwnerInterface $user
+     * @return \DateTime|null
+     */
+    public function userExpiresAt(ResourceOwnerInterface $user): ?\DateTime
+    {
+        $this->loadUserDetails($user);
+        if (!is_array($this->gitlabProjectMember)) {
+            return null;
+        }
+
+        if (empty($this->gitlabProjectMember['expires_at'])) {
+            return null;
+        }
+
+        $expirationDate = new \DateTime($this->gitlabProjectMember['expires_at']);
+        return $expirationDate;
     }
 
     /**
@@ -111,18 +130,25 @@ class GitLab extends AbstractResourceServer
      * @param array|null $currentRecord
      * @return array
      */
-    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord = null): array
+    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord): array
     {
         $userData = $user->toArray();
 
         if (!is_array($currentRecord)) {
             $currentRecord = [
-                'crdate' => time(),
-                'tstamp' => time(),
                 'pid' => 0,
-                'username' => substr($this->providerName . '_' . $userData['username'], 0, 50),
+                'password' => 'invalid'
             ];
         }
+
+        $currentRecord = array_merge(
+            $currentRecord,
+            [
+                'email' => $userData['email'],
+                'realname' => $userData['name'],
+                'username' => $this->getUsernameFromUser($user)
+            ]
+        );
 
         return $currentRecord;
     }
@@ -134,7 +160,7 @@ class GitLab extends AbstractResourceServer
     public function getUsernameFromUser(ResourceOwnerInterface $user): string
     {
         $userData = $user->toArray();
-        return $userData['username'];
+        return substr($this->providerName . '_' . $userData['username'], 0, 50);
     }
 
     /**
@@ -145,5 +171,43 @@ class GitLab extends AbstractResourceServer
     {
         $userData = $user->toArray();
         return $userData['email'];
+    }
+
+    /**
+     * @param ResourceOwnerInterface $user
+     */
+    public function loadUserDetails(ResourceOwnerInterface $user): void
+    {
+        if (!$user instanceof GitlabResourceOwner) {
+            throw new \InvalidArgumentException(
+                'Resource owner "' . (string)$user . '" is no suitable GitLab resource owner'
+            );
+        }
+
+        if ($this->userDetailsLoaded) {
+            return;
+        }
+
+        /** @var Client $gitlabClient */
+        $gitlabClient = $user->getApiClient();
+
+        try {
+            $this->gitlabProjectMember = $gitlabClient->projects->member($this->projectName, $user->getId());
+        } catch (\Exception $ex) {
+            // User not authorized to access this project
+        }
+
+        $this->userDetailsLoaded = true;
+    }
+
+    /**
+     * @param ResourceOwnerInterface $user
+     * @return bool
+     */
+    public function userIsActive(ResourceOwnerInterface $user): bool
+    {
+        $this->loadUserDetails($user);
+
+        return (is_array($this->gitlabProjectMember) && $this->gitlabProjectMember['state'] === 'active');
     }
 }

@@ -43,5 +43,9 @@ class OAuth2LoginProvider implements LoginProviderInterface
         $view->setTemplatePathAndFilename(
             GeneralUtility::getFileAbsFileName('EXT:oauth2/Resources/Private/Templates/OAuth2Login.html')
         );
+
+        if (!empty(GeneralUtility::_GP('state'))) {
+            $view->assign('hasOAuthLoginError', true);
+        }
     }
 }

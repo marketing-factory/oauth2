@@ -87,15 +87,23 @@ class OAuth2LoginService extends AbstractService
             $this->sendOAuthRedirect();
             exit;
         } elseif ($this->isOAuthRedirectRequest()) {
-            $this->currentAccessToken = $this->resourceServer->getOAuthProvider()->getAccessToken('authorization_code',
-                [
-                    'code' => GeneralUtility::_GET('code')
-                ]);
+            try {
+                $this->currentAccessToken = $this->resourceServer->getOAuthProvider()->getAccessToken('authorization_code',
+                    [
+                        'code' => GeneralUtility::_GET('code')
+                    ]);
+            } catch (\Exception $ex) {
+                return false;
+            }
 
             if ($this->currentAccessToken instanceof AccessToken) {
                 try {
                     $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
                     $record = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
+
+                    if (!$record) {
+                        return false;
+                    }
 
                     return $record;
                 } catch (\Exception $ex) {
@@ -144,9 +152,9 @@ class OAuth2LoginService extends AbstractService
     /**
      * @param ResourceOwnerInterface $user
      * @param string $providerName
-     * @return array
+     * @return array|null
      */
-    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): array
+    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): ?array
     {
         $oauthIdentifier = $this->resourceServer->getOAuthIdentifier($user);
 
@@ -204,7 +212,23 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
-            $record = $this->resourceServer->updateUserRecord($user);
+            $record = [
+                'crdate' => time(),
+                'tstamp' => time(),
+                'admin' => (int)$this->resourceServer->userShouldBeAdmin($user),
+                'disable' => 0,
+                'starttime' => 0,
+                'endtime' => 0,
+                'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
+                'password' => 'invalid'
+            ];
+
+            $expirationDate = $this->resourceServer->userExpiresAt($user);
+            if ($expirationDate instanceof \DateTime) {
+                $record['endtime'] = $expirationDate->format('U');
+            }
+
+            $record = $this->resourceServer->updateUserRecord($user, $record);
 
             $queryBuilder->insert(
                 $this->authenticationInformation['db_user']['table']
@@ -214,10 +238,12 @@ class OAuth2LoginService extends AbstractService
 
             $record = $this->parentObject->fetchUserRecord(
                 $this->authenticationInformation['db_user'],
-                $user['username']
+                $this->resourceServer->getUsernameFromUser($user)
             );
         } else {
             if (/* should update permissions */ true) {
+                $this->resourceServer->loadUserDetails($user);
+
                 $record = array_merge(
                     $record,
                     [
@@ -228,6 +254,11 @@ class OAuth2LoginService extends AbstractService
                         'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
                     ]
                 );
+
+                $expirationDate = $this->resourceServer->userExpiresAt($user);
+                if ($expirationDate instanceof \DateTime) {
+                    $record['endtime'] = $expirationDate->format('U');
+                }
             }
 
             $record = $this->resourceServer->updateUserRecord($user, $record);
@@ -252,7 +283,7 @@ class OAuth2LoginService extends AbstractService
             $qb->execute();
         }
 
-        return $record;
+        return is_array($record) ? $record : null;
     }
 
     public function authUser(array $userRecord)
@@ -260,7 +291,9 @@ class OAuth2LoginService extends AbstractService
         $result = 100;
 
         if ($userRecord['oauth_identifier'] !== '') {
-            if ($this->currentAccessToken instanceof AccessToken) {
+            $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
+
+            if ($this->currentAccessToken instanceof AccessToken && $this->resourceServer->userIsActive($user)) {
                 $result = 200;
             }
         }
