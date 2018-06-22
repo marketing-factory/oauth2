@@ -1,7 +1,6 @@
 <?php
 
 use Mfc\OAuth2\LoginProvider\OAuth2LoginProvider;
-use Mfc\OAuth2\Services\OAuth2Eid;
 use Mfc\OAuth2\Services\OAuth2LoginService;
 
 defined('TYPO3_MODE') || die();
@@ -22,8 +21,6 @@ defined('TYPO3_MODE') || die();
         'className' => OAuth2LoginService::class
     ]
 );
-
-$GLOBALS['TYPO3_CONF_VARS']['FE']['eID_include']['oauth2'] = OAuth2Eid::class . '::processRequest';
 
 $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'][1529672977] = [
     'provider' => OAuth2LoginProvider::class,
