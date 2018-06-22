@@ -228,7 +228,7 @@ class OAuth2LoginService extends AbstractService
                 'crdate' => time(),
                 'tstamp' => time(),
                 'pid' => 0,
-                'username' => $providerName . '_' . $userData['username'],
+                'username' => substr($providerName . '_' . $userData['username'], 0, 50),
                 'password' => 'invalid',
                 'admin' => 1,
                 'oauth_identifier' => $oauthIdentifier
