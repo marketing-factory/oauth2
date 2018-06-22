@@ -1,0 +1,17 @@
+# cat=GitLab//1; type=string; label=GitLab application Id
+gitlabAppId =
+
+# cat=GitLab//2; type=string; label=GitLab application secret
+gitlabAppSecret =
+
+# cat=GitLab//3; type=string; label=Gitlab server address
+gitlabServer =
+
+# cat=GitLab//4; type=string; label=Project repository name
+gitlabRepositoryName =
+
+# cat=GitLab//5; type=boolean; label=override existing user
+overrideUser = 0
+
+# cat=GitLab//6; type=int; label=standard user group of new user
+defaultGroup =
