@@ -1,7 +1,7 @@
 {
   "name": "mfc/oauth2",
   "type": "typo3-cms-extension",
-  "description": "",
+  "description": "Generic OAuth2 authentication and authorization for TYPO3 CMS",
   "homepage": "https://www.marketing-factory.de",
   "authors": [
     {

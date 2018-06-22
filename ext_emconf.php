@@ -4,7 +4,7 @@
  * Extension Manager/Repository config file for ext "site_verkehrskadetten_aachen".
  */
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'OAuth2 authentication and authorization for TYPO3 CMS',
+    'title' => 'Generic OAuth2 authentication and authorization for TYPO3 CMS',
     'description' => '',
     'category' => 'system',
     'constraints' => [
