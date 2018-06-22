@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Mfc\OAuth2\Services;
 
+use Gitlab\Client;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
@@ -11,6 +12,7 @@ use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Service\AbstractService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -96,8 +98,9 @@ class OAuth2LoginService extends AbstractService
                     $user = $this->oauthProvider->getResourceOwner($this->currentAccessToken);
                     $userData = $user->toArray();
 
-                    $user = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
-                    return $user;
+                    $record = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
+
+                    return $record;
                 } catch (\Exception $ex) {
                     return false;
                 }
@@ -153,11 +156,20 @@ class OAuth2LoginService extends AbstractService
     private function sendOAuthRedirect(string $providerName)
     {
         $authorizationUrl = $this->oauthProvider->getAuthorizationUrl([
-            'scope' => ['read_user','openid']
+            'scope' => ['api', 'read_user','openid']
         ]);
 
         $_SESSION['oauth2state'] = $this->oauthProvider->getState();
         HttpUtility::redirect($authorizationUrl, HttpUtility::HTTP_STATUS_303);
+    }
+
+    private function getResourceOwnerAccessLevel(ResourceOwnerInterface $user): int
+    {
+        /** @var Client $gitlabClient */
+        $gitlabClient = $user->getApiClient();
+
+        $member = $gitlabClient->projects->member('Zenobio/test-project-1', $user->getId());
+        return (int)$member['access_level'];
     }
 
     /**
@@ -224,13 +236,15 @@ class OAuth2LoginService extends AbstractService
 
         if (!is_array($record)) {
             // User still not found. Create it.
+            $accessLevel = $this->getResourceOwnerAccessLevel($user);
+
             $user = [
                 'crdate' => time(),
                 'tstamp' => time(),
                 'pid' => 0,
                 'username' => substr($providerName . '_' . $userData['username'], 0, 50),
                 'password' => 'invalid',
-                'admin' => 1,
+                'admin' => (int)($accessLevel >= 30),
                 'oauth_identifier' => $oauthIdentifier
             ];
 
