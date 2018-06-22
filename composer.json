@@ -3,6 +3,20 @@
   "type": "typo3-cms-extension",
   "description": "",
   "homepage": "https://www.marketing-factory.de",
+  "authors": [
+    {
+      "name": "Christian Hellmund",
+      "role": "Developer"
+    },
+    {
+      "name": "Simon Schmidt",
+      "role": "Developer"
+    },
+    {
+      "name": "Christian Spoo",
+      "role": "Developer"
+    }
+  ],
   "license": [
     "MIT"
   ],
