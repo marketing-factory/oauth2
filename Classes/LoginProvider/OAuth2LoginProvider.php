@@ -7,6 +7,7 @@ use TYPO3\CMS\Backend\Controller\LoginController;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
 /**
@@ -43,6 +44,12 @@ class OAuth2LoginProvider implements LoginProviderInterface
         $view->setTemplatePathAndFilename(
             GeneralUtility::getFileAbsFileName('EXT:oauth2/Resources/Private/Templates/OAuth2Login.html')
         );
+
+        if (VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
+            $view->assign('baseLayout', 'OAuth2Login-9');
+        } else {
+            $view->assign('baseLayout', 'OAuth2Login');
+        }
 
         if (!empty(GeneralUtility::_GP('state'))) {
             $view->assign('hasOAuthLoginError', true);
