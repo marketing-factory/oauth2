@@ -30,7 +30,7 @@
     }
   },
   "require": {
-    "php": "^7.2",
+    "php": "^7.1",
     "league/oauth2-client": "^2.3",
     "m4tthumphrey/php-gitlab-api": "^9.10",
     "omines/oauth2-gitlab": "^3.1",
