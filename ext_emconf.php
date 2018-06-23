@@ -4,8 +4,8 @@
  * Extension Manager/Repository config file for ext "site_verkehrskadetten_aachen".
  */
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Generic OAuth2 authentication and authorization for TYPO3 CMS',
-    'description' => '',
+    'title' => 'OAuth2 authentication and authorization',
+    'description' => 'Generic OAuth 2.0 authentication and authorization for TYPO3 CMS',
     'category' => 'system',
     'constraints' => [
         'depends' => [
@@ -19,12 +19,12 @@ $EM_CONF[$_EXTKEY] = [
             'Mfc\\OAuth2\\' => 'Classes'
         ],
     ],
-    'state' => 'alpha',
+    'state' => 'beta',
     'uploadfolder' => 0,
     'createDirs' => '',
     'clearCacheOnLoad' => 1,
     'author' => 'Christian Spoo',
     'author_email' => 'cs@marketing-factory.de',
     'author_company' => 'Marketing-Factory Consulting GmbH',
-    'version' => '0.0.1-beta',
+    'version' => '0.1.0',
 ];

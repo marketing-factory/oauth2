@@ -22,9 +22,16 @@ defined('TYPO3_MODE') || die();
     ]
 );
 
-$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'][1529672977] = [
-    'provider' => OAuth2LoginProvider::class,
-    'sorting' => 25,
-    'icon-class' => 'fa-sign-in',
-    'label' => 'LLL:EXT:oauth2/Resources/Private/Language/locallang.xlf:oauth2.login.link'
-];
+$extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+
+if ($extensionConfig['gitlabEnableBackendLogin'] && !empty($extensionConfig['gitlabAppId'])
+    && !empty($extensionConfig['gitlabAppSecret'])
+    && !empty($extensionConfig['gitlabServer'])
+) {
+    $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['backend']['loginProviders'][1529672977] = [
+        'provider' => OAuth2LoginProvider::class,
+        'sorting' => 25,
+        'icon-class' => 'fa-sign-in',
+        'label' => 'LLL:EXT:oauth2/Resources/Private/Language/locallang.xlf:oauth2.login.link'
+    ];
+}

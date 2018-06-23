@@ -13,8 +13,10 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Service\AbstractService;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
  * Class OAuth2LoginService
@@ -99,7 +101,7 @@ class OAuth2LoginService extends AbstractService
             if ($this->currentAccessToken instanceof AccessToken) {
                 try {
                     $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
-                    $record = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
+                    $record = $this->findOrCreateUserByResourceOwner($user);
 
                     if (!$record) {
                         return false;
@@ -127,6 +129,7 @@ class OAuth2LoginService extends AbstractService
                     $this->extensionConfig['gitlabAppSecret'],
                     'gitlab',
                     $this->extensionConfig['gitlabServer'],
+                    $this->extensionConfig['gitlabAdminUserLevel'],
                     $this->extensionConfig['gitlabRepositoryName']
                 );
                 break;
@@ -151,10 +154,9 @@ class OAuth2LoginService extends AbstractService
 
     /**
      * @param ResourceOwnerInterface $user
-     * @param string $providerName
      * @return array|null
      */
-    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): ?array
+    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user): ?array
     {
         $oauthIdentifier = $this->resourceServer->getOAuthIdentifier($user);
 
@@ -212,6 +214,8 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
+            $saltingInstance = SaltFactory::getSaltingInstance(null);
+
             $record = [
                 'crdate' => time(),
                 'tstamp' => time(),
@@ -220,7 +224,7 @@ class OAuth2LoginService extends AbstractService
                 'starttime' => 0,
                 'endtime' => 0,
                 'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
-                'password' => 'invalid'
+                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
             ];
 
             $expirationDate = $this->resourceServer->userExpiresAt($user);
@@ -241,7 +245,7 @@ class OAuth2LoginService extends AbstractService
                 $this->resourceServer->getUsernameFromUser($user)
             );
         } else {
-            if (/* should update permissions */ true) {
+            if ($this->extensionConfig['overrideUser']) {
                 $this->resourceServer->loadUserDetails($user);
 
                 $record = array_merge(
@@ -254,6 +258,10 @@ class OAuth2LoginService extends AbstractService
                         'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
                     ]
                 );
+
+                if (ExtensionManagementUtility::isLoaded('be_secure_pw')) {
+                    $record['tx_besecurepw_lastpwchange'] = time();
+                }
 
                 $expirationDate = $this->resourceServer->userExpiresAt($user);
                 if ($expirationDate instanceof \DateTime) {
@@ -290,7 +298,9 @@ class OAuth2LoginService extends AbstractService
     {
         $result = 100;
 
-        if ($userRecord['oauth_identifier'] !== '') {
+        // Check if $this->resourceServer is already instantiated (this indicates that we were previously in the
+        // getUser() function)
+        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer instanceof AbstractResourceServer) {
             $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
 
             if ($this->currentAccessToken instanceof AccessToken && $this->resourceServer->userIsActive($user)) {
