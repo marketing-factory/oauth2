@@ -11,7 +11,13 @@ gitlabServer =
 gitlabRepositoryName =
 
 # cat=GitLab//5; type=boolean; label=override existing user
-overrideUser = 0
+gitlabOverrideUser = 0
 
-# cat=GitLab//6; type=int; label=standard user group of new user
-defaultGroup =
+# cat=GitLab//0; type=boolean; label=Enable Backend Login
+gitlabEnableBackendLogin = 0
+
+# cat=GitLab//6; type=int; label=standard user group of new user if no matching found
+gitlabDefaultGroup =
+
+# cat=GitLab//7; type=int; label=gitlab at least user level for admin
+gitlabAdminUserLevel = 30
