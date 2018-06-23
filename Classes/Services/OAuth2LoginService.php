@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Service\AbstractService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
+use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
  * Class OAuth2LoginService
@@ -213,6 +214,8 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
+            $saltingInstance = SaltFactory::getSaltingInstance(null);
+
             $record = [
                 'crdate' => time(),
                 'tstamp' => time(),
@@ -221,7 +224,7 @@ class OAuth2LoginService extends AbstractService
                 'starttime' => 0,
                 'endtime' => 0,
                 'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
-                'password' => 'invalid'
+                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
             ];
 
             $expirationDate = $this->resourceServer->userExpiresAt($user);
