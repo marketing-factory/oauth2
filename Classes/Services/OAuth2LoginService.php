@@ -100,7 +100,7 @@ class OAuth2LoginService extends AbstractService
             if ($this->currentAccessToken instanceof AccessToken) {
                 try {
                     $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
-                    $record = $this->findOrCreateUserByResourceOwner($user, $oauthProvider);
+                    $record = $this->findOrCreateUserByResourceOwner($user);
 
                     if (!$record) {
                         return false;
@@ -152,10 +152,9 @@ class OAuth2LoginService extends AbstractService
 
     /**
      * @param ResourceOwnerInterface $user
-     * @param string $providerName
      * @return array|null
      */
-    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user, string $providerName): ?array
+    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user): ?array
     {
         $oauthIdentifier = $this->resourceServer->getOAuthIdentifier($user);
 
