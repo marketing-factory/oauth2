@@ -8,6 +8,11 @@ use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
 use Omines\OAuth2\Client\Provider\GitlabResourceOwner;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 
 /**
  * Class GitLab
@@ -18,6 +23,13 @@ class GitLab extends AbstractResourceServer
 {
     /** @var int  */
     protected $adminUserLevel;
+
+    /**
+     * @var array
+     */
+    protected $gitlabDefaultGroups;
+
+    protected $userOption;
 
     /**
      * @var GitLabOAuthProvider
@@ -44,6 +56,8 @@ class GitLab extends AbstractResourceServer
      * @param string $providerName
      * @param string $gitlabServer
      * @param string $gitlabAdminUserLevel
+     * @param string $gitlabDefaultGroups
+     * @param string $gitlabUserOption
      * @param string $projectName
      */
     public function __construct(
@@ -52,11 +66,15 @@ class GitLab extends AbstractResourceServer
         string $providerName,
         string $gitlabServer,
         string $gitlabAdminUserLevel,
+        string $gitlabDefaultGroups,
+        string $gitlabUserOption,
         string $projectName
     ) {
         $this->providerName = $providerName;
         $this->projectName = $projectName;
         $this->adminUserLevel = (int) $gitlabAdminUserLevel;
+        $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $gitlabDefaultGroups, true);
+        $this->userOption = (int) $gitlabUserOption;
 
         $this->oauthProvider = new GitLabOAuthProvider([
             'clientId' => $appId,
@@ -134,9 +152,10 @@ class GitLab extends AbstractResourceServer
     /**
      * @param ResourceOwnerInterface $user
      * @param array|null $currentRecord
+     * @param array $authentificationInformation
      * @return array
      */
-    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord): array
+    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord, array $authentificationInformation): array
     {
         $userData = $user->toArray();
 
@@ -152,7 +171,13 @@ class GitLab extends AbstractResourceServer
             [
                 'email' => $userData['email'],
                 'realname' => $userData['name'],
-                'username' => $this->getUsernameFromUser($user)
+                'username' => $this->getUsernameFromUser($user),
+                'usergroup' => $this->getUserGroupsForUser(
+                    $this->gitlabDefaultGroups,
+                    $this->adminUserLevel,
+                    $authentificationInformation['db_groups']['table']
+                ),
+                'options' => $this->userOption
             ]
         );
 
@@ -215,5 +240,61 @@ class GitLab extends AbstractResourceServer
         $this->loadUserDetails($user);
 
         return (is_array($this->gitlabProjectMember) && $this->gitlabProjectMember['state'] === 'active');
+    }
+
+    /**
+     * @param array $defaultUserGroups
+     * @param int $userLevel
+     * @param string $table
+     * @return string
+     */
+    protected function getUserGroupsForUser(
+        array $defaultUserGroups,
+        int $userLevel = 0,
+        string $table = 'be_groups'
+    ) {
+        $userGroups = $defaultUserGroups;
+
+        if ($userLevel > 0) {
+            $tempGroups = $this->getUserGroupsForAccessLevel($userLevel, $table);
+            if (!empty($tempGroups)) {
+                $userGroups = $tempGroups;
+            }
+        }
+
+        return implode(',', $userGroups);
+    }
+
+    /**
+     * @param integer $level
+     * @param string $table
+     * @return array
+     */
+    protected function getUserGroupsForAccessLevel($level, $table): array
+    {
+        // Try to find the user first by its OAuth Identifier
+        /** @var QueryBuilder $queryBuilder */
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($table);
+        $queryBuilder->getRestrictions()
+            ->removeAll()
+            ->add(new DeletedRestriction());
+
+        $record = $queryBuilder
+            ->select('uid')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->inSet(
+                    'gitlabGroup',
+                    $queryBuilder->createNamedParameter(
+                        $level,
+                        Connection::PARAM_STR
+                    )
+                )
+            )
+            ->execute()
+            ->fetchAll(\PDO::FETCH_COLUMN);
+
+        return empty($record)? [] : array_values($record);
     }
 }

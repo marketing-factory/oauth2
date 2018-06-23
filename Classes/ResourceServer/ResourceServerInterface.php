@@ -55,9 +55,10 @@ interface ResourceServerInterface
     /**
      * @param ResourceOwnerInterface $user
      * @param array $currentRecord
+     * @param array $authentificationInformation
      * @return array
      */
-    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord): array;
+    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord, array $authentificationInformation): array;
 
     /**
      * @param ResourceOwnerInterface $user

@@ -20,4 +20,5 @@ abstract class AbstractResourceServer implements ResourceServerInterface
     {
         return GeneralUtility::locationHeaderUrl('/typo3/index.php?loginProvider=1529672977&login_status=login&oauth-provider=' . $providerName);
     }
+
 }
