@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Service\AbstractService;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 
@@ -254,6 +255,10 @@ class OAuth2LoginService extends AbstractService
                         'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
                     ]
                 );
+
+                if (ExtensionManagementUtility::isLoaded('be_secure_pw')) {
+                    $record['tx_besecurepw_lastpwchange'] = time();
+                }
 
                 $expirationDate = $this->resourceServer->userExpiresAt($user);
                 if ($expirationDate instanceof \DateTime) {
