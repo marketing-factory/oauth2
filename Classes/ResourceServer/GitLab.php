@@ -43,7 +43,7 @@ class GitLab extends AbstractResourceServer
      * @param string $appSecret
      * @param string $providerName
      * @param string $gitlabServer
-     * @param int $gitlabAdminUserLevel
+     * @param string $gitlabAdminUserLevel
      * @param string $projectName
      */
     public function __construct(
@@ -51,12 +51,12 @@ class GitLab extends AbstractResourceServer
         string $appSecret,
         string $providerName,
         string $gitlabServer,
-        int $gitlabAdminUserLevel,
+        string $gitlabAdminUserLevel,
         string $projectName
     ) {
         $this->providerName = $providerName;
         $this->projectName = $projectName;
-        $this->adminUserLevel = $gitlabAdminUserLevel;
+        $this->adminUserLevel = (int) $gitlabAdminUserLevel;
 
         $this->oauthProvider = new GitLabOAuthProvider([
             'clientId' => $appId,
