@@ -130,6 +130,8 @@ class OAuth2LoginService extends AbstractService
                     'gitlab',
                     $this->extensionConfig['gitlabServer'],
                     $this->extensionConfig['gitlabAdminUserLevel'],
+                    $this->extensionConfig['gitlabDefaultGroups'],
+                    $this->extensionConfig['gitlabUserOption'],
                     $this->extensionConfig['gitlabRepositoryName']
                 );
                 break;
@@ -232,7 +234,7 @@ class OAuth2LoginService extends AbstractService
                 $record['endtime'] = $expirationDate->format('U');
             }
 
-            $record = $this->resourceServer->updateUserRecord($user, $record);
+            $record = $this->resourceServer->updateUserRecord($user, $record, $this->authenticationInformation);
 
             $queryBuilder->insert(
                 $this->authenticationInformation['db_user']['table']
@@ -245,7 +247,7 @@ class OAuth2LoginService extends AbstractService
                 $this->resourceServer->getUsernameFromUser($user)
             );
         } else {
-            if ($this->extensionConfig['overrideUser']) {
+            if ($this->extensionConfig['gitlabOverrideUser']) {
                 $this->resourceServer->loadUserDetails($user);
 
                 $record = array_merge(
@@ -269,7 +271,7 @@ class OAuth2LoginService extends AbstractService
                 }
             }
 
-            $record = $this->resourceServer->updateUserRecord($user, $record);
+            $record = $this->resourceServer->updateUserRecord($user, $record, $this->authenticationInformation);
 
             $qb = $queryBuilder->update(
                 $this->authenticationInformation['db_user']['table']
