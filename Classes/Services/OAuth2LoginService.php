@@ -130,8 +130,8 @@ class OAuth2LoginService extends AbstractService
                     'gitlab',
                     $this->extensionConfig['gitlabServer'],
                     $this->extensionConfig['gitlabAdminUserLevel'],
-                    $this->extensionConfig['gitlabDefaultGroups'],
-                    $this->extensionConfig['gitlabUserOption'],
+                    $this->extensionConfig['gitlabDefaultGroups'] ?? '',
+                    $this->extensionConfig['gitlabUserOption'] ?? '0',
                     $this->extensionConfig['gitlabRepositoryName']
                 );
                 break;
@@ -247,7 +247,7 @@ class OAuth2LoginService extends AbstractService
                 $this->resourceServer->getUsernameFromUser($user)
             );
         } else {
-            if ($this->extensionConfig['gitlabOverrideUser']) {
+            if ($this->extensionConfig['gitlabOverrideUser'] && $this->extensionConfig['gitlabRepositoryName']) {
                 $this->resourceServer->loadUserDetails($user);
 
                 $record = array_merge(

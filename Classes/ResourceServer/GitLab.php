@@ -21,16 +21,18 @@ use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
  */
 class GitLab extends AbstractResourceServer
 {
-    /** @var int  */
-    protected $adminUserLevel;
-
+    /**
+     * @var int
+     */
+    private $adminUserLevel;
     /**
      * @var array
      */
-    protected $gitlabDefaultGroups;
-
-    protected $userOption;
-
+    private $gitlabDefaultGroups;
+    /**
+     * @var int
+     */
+    private $userOption;
     /**
      * @var GitLabOAuthProvider
      */
@@ -40,9 +42,12 @@ class GitLab extends AbstractResourceServer
      */
     private $providerName;
     /**
-     * @var string
+     * @var string|null
      */
     private $projectName;
+    /**
+     * @var bool
+     */
     private $userDetailsLoaded = false;
     /**
      * @var array
@@ -58,7 +63,7 @@ class GitLab extends AbstractResourceServer
      * @param string $gitlabAdminUserLevel
      * @param string $gitlabDefaultGroups
      * @param string $gitlabUserOption
-     * @param string $projectName
+     * @param string|null $projectName
      */
     public function __construct(
         string $appId,
@@ -68,7 +73,7 @@ class GitLab extends AbstractResourceServer
         string $gitlabAdminUserLevel,
         string $gitlabDefaultGroups,
         string $gitlabUserOption,
-        string $projectName
+        ?string $projectName
     ) {
         $this->providerName = $providerName;
         $this->projectName = $projectName;
@@ -216,6 +221,10 @@ class GitLab extends AbstractResourceServer
         }
 
         if ($this->userDetailsLoaded) {
+            return;
+        }
+
+        if (empty($this->projectName)) {
             return;
         }
 
