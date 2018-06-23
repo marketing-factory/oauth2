@@ -295,7 +295,9 @@ class OAuth2LoginService extends AbstractService
     {
         $result = 100;
 
-        if ($userRecord['oauth_identifier'] !== '') {
+        // Check if $this->resourceServer is already instantiated (this indicates that we were previously in the
+        // getUser() function)
+        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer instanceof AbstractResourceServer) {
             $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
 
             if ($this->currentAccessToken instanceof AccessToken && $this->resourceServer->userIsActive($user)) {
