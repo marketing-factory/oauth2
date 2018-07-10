@@ -26,5 +26,5 @@ $EM_CONF[$_EXTKEY] = [
     'author' => 'Christian Hellmund, Simon Schmidt, Christian Spoo',
     'author_email' => 'typo3@marketing-factory.de',
     'author_company' => 'Marketing Factory Consulting GmbH',
-    'version' => '0.2.3',
+    'version' => '0.2.4',
 ];
