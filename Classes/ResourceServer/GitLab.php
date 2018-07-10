@@ -200,7 +200,7 @@ class GitLab extends AbstractResourceServer
     public function getUsernameFromUser(ResourceOwnerInterface $user): string
     {
         $userData = $user->toArray();
-        return substr($this->providerName . '_' . $userData['username'], 0, 50);
+        return substr($userData['username'], 0, 50);
     }
 
     /**
