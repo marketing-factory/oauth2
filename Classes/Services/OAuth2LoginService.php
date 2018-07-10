@@ -90,10 +90,12 @@ class OAuth2LoginService extends AbstractService
             exit;
         } elseif ($this->isOAuthRedirectRequest()) {
             try {
-                $this->currentAccessToken = $this->resourceServer->getOAuthProvider()->getAccessToken('authorization_code',
+                $this->currentAccessToken = $this->resourceServer->getOAuthProvider()->getAccessToken(
+                    'authorization_code',
                     [
                         'code' => GeneralUtility::_GET('code')
-                    ]);
+                    ]
+                );
             } catch (\Exception $ex) {
                 return false;
             }
@@ -112,7 +114,6 @@ class OAuth2LoginService extends AbstractService
                     return false;
                 }
             }
-
         } else {
             unset($_SESSION['oauth2state']);
         }
