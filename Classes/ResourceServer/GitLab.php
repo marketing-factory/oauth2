@@ -52,7 +52,7 @@ class GitLab extends AbstractResourceServer
     /**
      * @var array
      */
-    private $gitlabProjectMember;
+    private $gitlabProjectPermissions;
 
     /**
      * GitLab constructor.
@@ -114,11 +114,11 @@ class GitLab extends AbstractResourceServer
     public function userShouldBeAdmin(ResourceOwnerInterface $user): bool
     {
         $this->loadUserDetails($user);
-        if (!is_array($this->gitlabProjectMember)) {
+        if (!is_array($this->gitlabProjectPermissions)) {
             return false;
         }
 
-        $accessLevel = $this->gitlabProjectMember['access_level'];
+        $accessLevel = $this->gitlabProjectPermissions['access_level'];
 
         // Grant admin access from Developer level onwards
         return $accessLevel >= $this->adminUserLevel;
@@ -131,16 +131,17 @@ class GitLab extends AbstractResourceServer
     public function userExpiresAt(ResourceOwnerInterface $user): ?\DateTime
     {
         $this->loadUserDetails($user);
-        if (!is_array($this->gitlabProjectMember)) {
+        if (!is_array($this->gitlabProjectPermissions)) {
             return null;
         }
 
-        if (empty($this->gitlabProjectMember['expires_at'])) {
+        return null;
+/*        if (empty($this->gitlabProjectPermissions['expires_at'])) {
             return null;
         }
 
-        $expirationDate = new \DateTime($this->gitlabProjectMember['expires_at']);
-        return $expirationDate;
+        $expirationDate = new \DateTime($this->gitlabProjectPermissions['expires_at']);
+        return $expirationDate;*/
     }
 
     /**
@@ -232,12 +233,18 @@ class GitLab extends AbstractResourceServer
         $gitlabClient = $user->getApiClient();
 
         try {
-            $this->gitlabProjectMember = $gitlabClient->projects->member($this->projectName, $user->getId());
+            $project = $gitlabClient->projects->show($this->projectName);
+
+            if (isset($project['permissions']['project_access'])) {
+                $this->gitlabProjectPermissions = $project['permissions']['project_access'];
+            } elseif (isset($project['permissions']['group_access'])) {
+                $this->gitlabProjectPermissions = $project['permissions']['group_access'];
+            }
+
+            $this->userDetailsLoaded = true;
         } catch (\Exception $ex) {
             // User not authorized to access this project
         }
-
-        $this->userDetailsLoaded = true;
     }
 
     /**
@@ -248,7 +255,7 @@ class GitLab extends AbstractResourceServer
     {
         $this->loadUserDetails($user);
 
-        return (is_array($this->gitlabProjectMember) && $this->gitlabProjectMember['state'] === 'active');
+        return !is_null($this->gitlabProjectPermissions) && is_array($this->gitlabProjectPermissions);
     }
 
     /**
