@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
  * Class GitLab
@@ -161,14 +162,16 @@ class GitLab extends AbstractResourceServer
      * @param array $authentificationInformation
      * @return array
      */
-    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord, array $authentificationInformation): array
+    public function updateUserRecord(ResourceOwnerInterface $user, array $currentRecord = null, array $authentificationInformation): array
     {
         $userData = $user->toArray();
 
         if (!is_array($currentRecord)) {
+            $saltingInstance = SaltFactory::getSaltingInstance(null);
+
             $currentRecord = [
                 'pid' => 0,
-                'password' => 'invalid'
+                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
             ];
         }
 

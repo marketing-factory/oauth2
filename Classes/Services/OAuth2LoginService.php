@@ -269,9 +269,16 @@ class OAuth2LoginService extends AbstractService
                 if ($expirationDate instanceof \DateTime) {
                     $record['endtime'] = $expirationDate->format('U');
                 }
-            }
 
-            $record = $this->resourceServer->updateUserRecord($user, $record, $this->authenticationInformation);
+                $record = $this->resourceServer->updateUserRecord($user, $record, $this->authenticationInformation);
+            } else {
+                $record = array_merge(
+                    $record,
+                    [
+                        'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
+                    ]
+                );
+            }
 
             $qb = $queryBuilder->update(
                 $this->authenticationInformation['db_user']['table']
