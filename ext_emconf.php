@@ -23,8 +23,8 @@ $EM_CONF[$_EXTKEY] = [
     'uploadfolder' => 0,
     'createDirs' => '',
     'clearCacheOnLoad' => 1,
-    'author' => 'Christian Spoo',
-    'author_email' => 'cs@marketing-factory.de',
-    'author_company' => 'Marketing-Factory Consulting GmbH',
-    'version' => '0.2.0',
+    'author' => 'Christian Hellmund, Simon Schmidt, Christian Spoo',
+    'author_email' => 'typo3@marketing-factory.de',
+    'author_company' => 'Marketing Factory Consulting GmbH',
+    'version' => '0.2.1',
 ];
