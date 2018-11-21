@@ -234,7 +234,7 @@ class GitLab extends AbstractResourceServer
                 'username' => $this->getUsernameFromUser($user),
                 'usergroup' => $this->getUserGroupsForUser(
                     $this->gitlabDefaultGroups,
-                    $this->adminUserLevel,
+                    $this->gitlabProjectPermissions['access_level'],
                     $authentificationInformation['db_groups']['table']
                 ),
                 'options' => $this->userOption
