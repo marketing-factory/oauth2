@@ -78,3 +78,6 @@ modules.xml
 
 
 # End of https://www.gitignore.io/api/composer,phpstorm+all
+
+# Unit tests
+.Build/

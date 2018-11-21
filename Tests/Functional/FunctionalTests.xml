@@ -1,0 +1,28 @@
+<phpunit
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        bootstrap="../../.Build/vendor/nimut/testing-framework/res/Configuration/FunctionalTestsBootstrap.php"
+
+        colors="true"
+        convertErrorsToExceptions="false"
+        convertWarningsToExceptions="false"
+        forceCoversAnnotation="false"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        verbose="false">
+
+    <testsuites>
+        <testsuite name="functional-tests">
+            <directory>.</directory>
+        </testsuite>
+    </testsuites>
+
+    <filter>
+        <whitelist>
+            <directory suffix=".php">../../Classes</directory>
+        </whitelist>
+    </filter>
+</phpunit>

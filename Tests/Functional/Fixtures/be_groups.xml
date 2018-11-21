@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<dataset>
+    <be_groups>
+        <uid>1</uid>
+        <pid>0</pid>
+        <title>Guest</title>
+        <gitlabGroup>10,20,30,40,50</gitlabGroup>
+    </be_groups>
+    <be_groups>
+        <uid>2</uid>
+        <pid>0</pid>
+        <title>Reporter</title>
+        <gitlabGroup>20,30,40,50</gitlabGroup>
+    </be_groups>
+</dataset>

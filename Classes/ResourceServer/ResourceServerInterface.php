@@ -5,6 +5,7 @@ namespace Mfc\OAuth2\ResourceServer;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use Mfc\OAuth2\Domain\Model\Dto\OauthUser;
 
 /**
  * Interface ResourceServerInterface
@@ -49,8 +50,9 @@ interface ResourceServerInterface
 
     /**
      * @param ResourceOwnerInterface $user
+     * @return OauthUser
      */
-    public function loadUserDetails(ResourceOwnerInterface $user): void;
+    public function loadUserDetails(ResourceOwnerInterface $user): ?OauthUser;
 
     /**
      * @param ResourceOwnerInterface $user

@@ -7,6 +7,7 @@ use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
 use Mfc\OAuth2\ResourceServer\GitLab;
+use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -125,11 +126,15 @@ class OAuth2LoginService extends AbstractService
     {
         switch ($oauthProvider) {
             case 'gitlab':
+                $provider = new GitLabOAuthProvider([
+                    'clientId' => $this->extensionConfig['gitlabAppId'],
+                    'clientSecret' => $this->extensionConfig['gitlabAppSecret'],
+                    'redirectUri' => $this->getRedirectUri('gitlab'),
+                    'domain' => $this->extensionConfig['gitlabServer'],
+                ]);
                 $this->resourceServer = new GitLab(
-                    $this->extensionConfig['gitlabAppId'],
-                    $this->extensionConfig['gitlabAppSecret'],
+                    $provider,
                     'gitlab',
-                    $this->extensionConfig['gitlabServer'],
                     $this->extensionConfig['gitlabAdminUserLevel'],
                     $this->extensionConfig['gitlabDefaultGroups'] ?? '',
                     $this->extensionConfig['gitlabUserOption'] ?? '0',
@@ -319,5 +324,14 @@ class OAuth2LoginService extends AbstractService
         }
 
         return $result;
+    }
+
+    /**
+     * @param string $providerName
+     * @return string
+     */
+    protected function getRedirectUri(string $providerName): string
+    {
+        return GeneralUtility::locationHeaderUrl('/typo3/index.php?loginProvider=1529672977&login_status=login&oauth-provider=' . $providerName);
     }
 }

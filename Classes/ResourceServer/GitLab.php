@@ -6,6 +6,7 @@ namespace Mfc\OAuth2\ResourceServer;
 use Gitlab\Client;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use Mfc\OAuth2\Domain\Model\Dto\OauthUser;
 use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
 use Omines\OAuth2\Client\Provider\GitlabResourceOwner;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -13,14 +14,13 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
  * Class GitLab
  * @package Mfc\OAuth2\ResourceServer
  * @author Christian Spoo <cs@marketing-factory.de>
  */
-class GitLab extends AbstractResourceServer
+class GitLab implements ResourceServerInterface
 {
     /**
      * @var int
@@ -47,47 +47,33 @@ class GitLab extends AbstractResourceServer
      */
     private $projectName;
     /**
-     * @var bool
+     * @var OauthUser
      */
-    private $userDetailsLoaded = false;
-    /**
-     * @var array
-     */
-    private $gitlabProjectPermissions;
+    private $gitLabUser;
 
     /**
      * GitLab constructor.
-     * @param string $appId
-     * @param string $appSecret
+     * @param AbstractProvider $provider
      * @param string $providerName
-     * @param string $gitlabServer
      * @param string $gitlabAdminUserLevel
      * @param string $gitlabDefaultGroups
      * @param string $gitlabUserOption
      * @param string|null $projectName
      */
     public function __construct(
-        string $appId,
-        string $appSecret,
+        AbstractProvider $provider,
         string $providerName,
-        string $gitlabServer,
         string $gitlabAdminUserLevel,
         string $gitlabDefaultGroups,
         string $gitlabUserOption,
         ?string $projectName
     ) {
+        $this->oauthProvider = $provider;
         $this->providerName = $providerName;
         $this->projectName = $projectName;
         $this->adminUserLevel = (int)$gitlabAdminUserLevel;
         $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $gitlabDefaultGroups, true);
         $this->userOption = (int)$gitlabUserOption;
-
-        $this->oauthProvider = new GitLabOAuthProvider([
-            'clientId' => $appId,
-            'clientSecret' => $appSecret,
-            'redirectUri' => $this->getRedirectUri($providerName),
-            'domain' => $gitlabServer,
-        ]);
     }
 
     /**
@@ -114,21 +100,20 @@ class GitLab extends AbstractResourceServer
      */
     public function userShouldBeAdmin(ResourceOwnerInterface $user): bool
     {
-        $this->loadUserDetails($user);
-        if (!is_array($this->gitlabProjectPermissions)) {
+        $oauthUser = $this->loadUserDetails($user);
+        if (!$user) {
             return false;
         }
 
-        $accessLevel = $this->gitlabProjectPermissions['access_level'];
-
         // Grant admin access from Developer level onwards
-        return $accessLevel >= $this->adminUserLevel;
+        return $oauthUser->getAccessLevel() >= $this->adminUserLevel;
     }
 
     /**
      * @param ResourceOwnerInterface $user
+     * @return OauthUser|null
      */
-    public function loadUserDetails(ResourceOwnerInterface $user): void
+    public function loadUserDetails(ResourceOwnerInterface $user): ?OauthUser
     {
         if (!$user instanceof GitlabResourceOwner) {
             throw new \InvalidArgumentException(
@@ -136,12 +121,12 @@ class GitLab extends AbstractResourceServer
             );
         }
 
-        if ($this->userDetailsLoaded) {
-            return;
+        if ($this->gitLabUser instanceof OauthUser) {
+            return $this->gitLabUser;
         }
 
         if (empty($this->projectName)) {
-            return;
+            return null;
         }
 
         /** @var Client $gitlabClient */
@@ -163,34 +148,28 @@ class GitLab extends AbstractResourceServer
                 }
             }
 
-            $this->gitlabProjectPermissions = [
-                'access_level' => $accessLevel
-            ];
+            $this->gitLabUser = GeneralUtility::makeInstance(OauthUser::class, (int)$accessLevel);
 
-            $this->userDetailsLoaded = true;
+            return $this->gitLabUser;
         } catch (\Exception $ex) {
             // User not authorized to access this project
+            return null;
         }
     }
 
     /**
      * @param ResourceOwnerInterface $user
      * @return \DateTime|null
+     * Todo Needs to be implemented correctly
      */
     public function userExpiresAt(ResourceOwnerInterface $user): ?\DateTime
     {
-        $this->loadUserDetails($user);
-        if (!is_array($this->gitlabProjectPermissions)) {
+        $user = $this->loadUserDetails($user);
+        if (!$user) {
             return null;
         }
 
         return null;
-        /*        if (empty($this->gitlabProjectPermissions['expires_at'])) {
-                    return null;
-                }
-
-                $expirationDate = new \DateTime($this->gitlabProjectPermissions['expires_at']);
-                return $expirationDate;*/
     }
 
     /**
@@ -199,9 +178,7 @@ class GitLab extends AbstractResourceServer
      */
     public function getOAuthIdentifier(ResourceOwnerInterface $user): string
     {
-        $userData = $user->toArray();
-
-        return $this->providerName . '|' . $userData['id'];
+        return $this->providerName . '|' . $user->getId();
     }
 
     /**
@@ -212,19 +189,11 @@ class GitLab extends AbstractResourceServer
      */
     public function updateUserRecord(
         ResourceOwnerInterface $user,
-        array $currentRecord = null,
+        array $currentRecord,
         array $authentificationInformation
     ): array {
+        $oauthUser = $this->loadUserDetails($user);
         $userData = $user->toArray();
-
-        if (!is_array($currentRecord)) {
-            $saltingInstance = SaltFactory::getSaltingInstance(null);
-
-            $currentRecord = [
-                'pid' => 0,
-                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
-            ];
-        }
 
         $currentRecord = array_merge(
             $currentRecord,
@@ -234,7 +203,7 @@ class GitLab extends AbstractResourceServer
                 'username' => $this->getUsernameFromUser($user),
                 'usergroup' => $this->getUserGroupsForUser(
                     $this->gitlabDefaultGroups,
-                    $this->adminUserLevel,
+                    $oauthUser->getAccessLevel(),
                     $authentificationInformation['db_groups']['table']
                 ),
                 'options' => $this->userOption
@@ -326,9 +295,8 @@ class GitLab extends AbstractResourceServer
      */
     public function userIsActive(ResourceOwnerInterface $user): bool
     {
-        $this->loadUserDetails($user);
+        $user = $this->loadUserDetails($user);
 
-        return !is_null($this->gitlabProjectPermissions) && is_array($this->gitlabProjectPermissions)
-            && ($this->gitlabProjectPermissions['access_level'] > 0);
+        return $user && ($user->getAccessLevel() > 0);
     }
 }

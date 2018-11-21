@@ -1,0 +1,60 @@
+language: php
+sudo: false
+
+matrix:
+  fast_finish: true
+  include:
+    - php: 7.2
+      env: TYPO3_VERSION=^9
+    - php: 7.2
+      env: TYPO3_VERSION=^8
+    - php: 7.1
+      env: TYPO3_VERSION=^8
+
+cache:
+  directories:
+    - $HOME/.composer/cache
+
+addons:
+  apt:
+    packages:
+      - parallel
+
+before_install:
+  - composer self-update
+  - composer --version
+
+before_script:
+  - phpenv config-rm xdebug.ini
+  - |
+    composer require \
+      typo3/cms-backend="$TYPO3_VERSION" \
+      typo3/cms-recordlist="$TYPO3_VERSION" \
+      typo3/cms-core="$TYPO3_VERSION" \
+      typo3/cms-extbase="$TYPO3_VERSION" \
+      typo3/cms-extensionmanager="$TYPO3_VERSION" \
+      typo3/cms-fluid="$TYPO3_VERSION" \
+      typo3/cms-frontend="$TYPO3_VERSION" \
+      typo3/cms-install="$TYPO3_VERSION" \
+      typo3/cms-scheduler="$TYPO3_VERSION" \
+  - git checkout composer.json
+  - export TYPO3_PATH_WEB=$PWD/.Build/Web
+
+script:
+  - >
+    echo;
+    echo "Running php lint...";
+    find . -name \*.php ! -path "./.Build/*" | parallel --gnu php -d display_errors=stderr -l {} > /dev/null \;
+  - >
+    echo;
+    echo "Running unit tests...";
+    .Build/bin/phpunit -c Tests/Unit/UnitTests.xml
+  - >
+    echo;
+    echo "Running functional tests...";
+    export typo3DatabaseName="typo3";
+    export typo3DatabaseHost="localhost";
+    export typo3DatabaseUsername="root";
+    export typo3DatabasePassword="";
+    .Build/bin/phpunit -c Tests/Functional/FunctionalTests.xml
+

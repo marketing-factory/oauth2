@@ -29,6 +29,11 @@
       "Mfc\\OAuth2\\": "Classes/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Mfc\\OAuth2\\Tests\\": "Tests/"
+    }
+  },
   "require": {
     "php": "^7.1",
     "league/oauth2-client": "^2.3",
@@ -37,5 +42,27 @@
     "php-http/guzzle6-adapter": "^1.1",
     "typo3/cms-core": "^8.7||^9.4",
     "typo3/cms-beuser": "^8.7||^9.4"
+  },
+  "require-dev": {
+    "nimut/testing-framework": "^4.1"
+  },
+  "conflict": {
+    "league/oauth2-client": "^2.4"
+  },
+  "config": {
+    "vendor-dir": ".Build/vendor",
+    "bin-dir": ".Build/bin"
+  },
+  "scripts": {
+    "post-autoload-dump": [
+      "mkdir -p .Build/Web/typo3conf/ext/",
+      "[ -L .Build/Web/typo3conf/ext/oauth2 ] || ln -snvf ../../../../. .Build/Web/typo3conf/ext/oauth2"
+    ]
+  },
+  "extra": {
+    "typo3/cms": {
+      "cms-package-dir": "{$vendor-dir}/typo3/cms",
+      "web-dir": ".Build/Web"
+    }
   }
 }
