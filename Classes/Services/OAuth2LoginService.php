@@ -5,8 +5,8 @@ namespace Mfc\OAuth2\Services;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
-use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
 use Mfc\OAuth2\ResourceServer\GitLab;
+use Mfc\OAuth2\ResourceServer\ResourceServerInterface;
 use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
@@ -122,7 +122,7 @@ class OAuth2LoginService extends AbstractService
         return null;
     }
 
-    private function initializeOAuthProvider($oauthProvider)
+    protected function initializeOAuthProvider($oauthProvider)
     {
         switch ($oauthProvider) {
             case 'gitlab':
@@ -147,14 +147,14 @@ class OAuth2LoginService extends AbstractService
     /**
      * @return string
      */
-    private function sendOAuthRedirect()
+    protected function sendOAuthRedirect()
     {
         $authorizationUrl = $this->resourceServer->getAuthorizationUrl();
         $_SESSION['oauth2state'] = $this->resourceServer->getOAuthProvider()->getState();
         HttpUtility::redirect($authorizationUrl, HttpUtility::HTTP_STATUS_303);
     }
 
-    private function isOAuthRedirectRequest()
+    protected function isOAuthRedirectRequest()
     {
         $state = GeneralUtility::_GET('state');
         return (!empty($state) && ($state === $_SESSION['oauth2state']));
@@ -164,7 +164,7 @@ class OAuth2LoginService extends AbstractService
      * @param ResourceOwnerInterface $user
      * @return array|null
      */
-    private function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user): ?array
+    protected function findOrCreateUserByResourceOwner(ResourceOwnerInterface $user): ?array
     {
         $oauthIdentifier = $this->resourceServer->getOAuthIdentifier($user);
 
@@ -315,7 +315,7 @@ class OAuth2LoginService extends AbstractService
 
         // Check if $this->resourceServer is already instantiated (this indicates that we were previously in the
         // getUser() function)
-        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer instanceof AbstractResourceServer) {
+        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer instanceof ResourceServerInterface) {
             $user = $this->resourceServer->getOAuthProvider()->getResourceOwner($this->currentAccessToken);
 
             if ($this->currentAccessToken instanceof AccessToken && $this->resourceServer->userIsActive($user)) {
