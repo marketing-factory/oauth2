@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Extension Manager/Repository config file for ext "site_verkehrskadetten_aachen".
+ * Extension Manager/Repository config file for ext "oauth2".
  */
 $EM_CONF[$_EXTKEY] = [
     'title' => 'OAuth2 authentication and authorization',
@@ -9,7 +9,7 @@ $EM_CONF[$_EXTKEY] = [
     'category' => 'system',
     'constraints' => [
         'depends' => [
-            'typo3' => '8.7.0-9.4.99'
+            'typo3' => '8.7.0-9.5.99'
         ],
         'conflicts' => [
         ],
