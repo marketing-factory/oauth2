@@ -14,6 +14,9 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\Argon2iPasswordHash;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 
 /**
  * Class GitLab
@@ -218,11 +221,20 @@ class GitLab extends AbstractResourceServer
         $userData = $user->toArray();
 
         if (!is_array($currentRecord)) {
-            $saltingInstance = SaltFactory::getSaltingInstance(null);
+            $passwordHashFactory = GeneralUtility::makeInstance(PasswordHashFactory::class);
+            $beHash = $passwordHashFactory->getDefaultHashInstance('BE');
+
+            if ($beHash instanceof Argon2iPasswordHash && VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
+                $argon2iInstance = new Argon2iPasswordHash();
+                $password = $argon2iInstance->getHashedPassword(md5(uniqid($this->resourceServer->getOAuthIdentifier($user), TRUE)));
+            } else {
+                $saltingInstance = SaltFactory::getSaltingInstance(null);
+                $password = $saltingInstance->getHashedPassword(md5(uniqid()));
+            }
 
             $currentRecord = [
                 'pid' => 0,
-                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
+                'password' => $password,
             ];
         }
 

@@ -17,6 +17,9 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
 use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\Argon2iPasswordHash;
 
 /**
  * Class OAuth2LoginService
@@ -217,7 +220,16 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
-            $saltingInstance = SaltFactory::getSaltingInstance(null);
+            $passwordHashFactory = GeneralUtility::makeInstance(PasswordHashFactory::class);
+            $beHash = $passwordHashFactory->getDefaultHashInstance('BE');
+
+            if ($beHash instanceof Argon2iPasswordHash && VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
+                $argon2iInstance = new Argon2iPasswordHash();
+                $password = $argon2iInstance->getHashedPassword(md5(uniqid($this->resourceServer->getOAuthIdentifier($user), TRUE)));
+            } else {
+                $saltingInstance = SaltFactory::getSaltingInstance(null);
+                $password = $saltingInstance->getHashedPassword(md5(uniqid()));
+            }
 
             $record = [
                 'crdate' => time(),
@@ -227,7 +239,7 @@ class OAuth2LoginService extends AbstractService
                 'starttime' => 0,
                 'endtime' => 0,
                 'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
-                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
+                'password' => $password
             ];
 
             $expirationDate = $this->resourceServer->userExpiresAt($user);
