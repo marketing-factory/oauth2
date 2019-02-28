@@ -68,7 +68,7 @@ class OAuth2LoginService extends AbstractService
         $this->authenticationInformation = $authenticationInformation;
         $this->parentObject = $parentObject;
 
-        if (!is_array($_SESSION)) {
+        if (!is_array($_SESSION) && $_GET['loginProvider'] === '1529672977') {
             @session_start();
         }
     }
