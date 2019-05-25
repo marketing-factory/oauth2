@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Mfc\OAuth2\ResourceServer;
 
@@ -8,11 +8,11 @@ use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
 use Omines\OAuth2\Client\Provider\GitlabResourceOwner;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
 
 /**
@@ -22,6 +22,11 @@ use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
  */
 class GitLab extends AbstractResourceServer
 {
+    public const USER_LEVEL_GUEST      = 10;
+    public const USER_LEVEL_REPORTER   = 20;
+    public const USER_LEVEL_DEVELOPER  = 30;
+    public const USER_LEVEL_MAINTAINER = 40;
+
     /**
      * @var int
      */
@@ -57,36 +62,21 @@ class GitLab extends AbstractResourceServer
 
     /**
      * GitLab constructor.
-     * @param string $appId
-     * @param string $appSecret
-     * @param string $providerName
-     * @param string $gitlabServer
-     * @param string $gitlabAdminUserLevel
-     * @param string $gitlabDefaultGroups
-     * @param string $gitlabUserOption
-     * @param string|null $projectName
+     *
+     * @param array $arguments
      */
-    public function __construct(
-        string $appId,
-        string $appSecret,
-        string $providerName,
-        string $gitlabServer,
-        string $gitlabAdminUserLevel,
-        string $gitlabDefaultGroups,
-        string $gitlabUserOption,
-        ?string $projectName
-    ) {
-        $this->providerName = $providerName;
-        $this->projectName = $projectName;
-        $this->adminUserLevel = (int)$gitlabAdminUserLevel;
-        $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $gitlabDefaultGroups, true);
-        $this->userOption = (int)$gitlabUserOption;
+    public function __construct(array $arguments) {
+        $this->providerName        = $arguments['providerName'];
+        $this->projectName         = $arguments['projectName'];
+        $this->adminUserLevel      = (int)$arguments['gitlabAdminUserLevel'];
+        $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $arguments['gitlabDefaultGroups'], true);
+        $this->userOption          = (int)$arguments['gitlabUserOption'];
 
         $this->oauthProvider = new GitLabOAuthProvider([
-            'clientId' => $appId,
-            'clientSecret' => $appSecret,
-            'redirectUri' => $this->getRedirectUri($providerName),
-            'domain' => $gitlabServer,
+            'clientId'     => $arguments['appId'],
+            'clientSecret' => $arguments['appSecret'],
+            'redirectUri'  => $this->getRedirectUri($arguments['providerName']),
+            'domain'       => $arguments['gitlabServer'],
         ]);
     }
 
@@ -141,7 +131,10 @@ class GitLab extends AbstractResourceServer
         }
 
         if (empty($this->projectName)) {
-            return;
+            throw new \InvalidArgumentException(
+                'A "projectName" must be set in order for the GitLab Provider to function',
+                1558972080
+            );
         }
 
         /** @var Client $gitlabClient */
