@@ -6,7 +6,7 @@ namespace Mfc\OAuth2\Services;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
-use Mfc\OAuth2\ResourceServer\GitLab;
+use Mfc\OAuth2\ResourceServer\Registry;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -121,22 +121,9 @@ class OAuth2LoginService extends AbstractService
         return null;
     }
 
-    private function initializeOAuthProvider($oauthProvider)
+    private function initializeOAuthProvider(string $oauthProvider)
     {
-        switch ($oauthProvider) {
-            case 'gitlab':
-                $this->resourceServer = new GitLab(
-                    $this->extensionConfig['gitlabAppId'],
-                    $this->extensionConfig['gitlabAppSecret'],
-                    'gitlab',
-                    $this->extensionConfig['gitlabServer'],
-                    $this->extensionConfig['gitlabAdminUserLevel'],
-                    $this->extensionConfig['gitlabDefaultGroups'] ?? '',
-                    $this->extensionConfig['gitlabUserOption'] ?? '0',
-                    $this->extensionConfig['gitlabRepositoryName']
-                );
-                break;
-        }
+        $this->resourceServer = Registry::getResourceServerInstance($oauthProvider);
     }
 
     /**
@@ -248,7 +235,7 @@ class OAuth2LoginService extends AbstractService
                 $this->resourceServer->getUsernameFromUser($user)
             );
         } else {
-            if ($this->extensionConfig['gitlabOverrideUser'] && $this->extensionConfig['gitlabRepositoryName']) {
+            if ($this->extensionConfig['overrideUser']) {
                 $this->resourceServer->loadUserDetails($user);
 
                 $record = array_merge(

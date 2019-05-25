@@ -11,6 +11,10 @@
             </div>
         </f:if>
 
-        <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="gitlab"><f:translate key="oauth2.login.button.gitlab" extensionName="oauth2" /></button>
+        <f:for as="provider" each="{providers}">
+            <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="{provider.identifier}">
+                {provider.title}
+            </button>
+        </f:for>
     </div>
 </f:section>
