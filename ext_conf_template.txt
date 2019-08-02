@@ -1,26 +1,5 @@
 # cat=GitLab//0; type=boolean; label=Enable Backend Login
-gitlabEnableBackendLogin = 0
+enableBackendLogin = 0
 
-# cat=GitLab//1; type=string; label=GitLab application Id
-gitlabAppId =
-
-# cat=GitLab//2; type=string; label=GitLab application secret
-gitlabAppSecret =
-
-# cat=GitLab//3; type=string; label=Gitlab server address
-gitlabServer =
-
-# cat=GitLab//4; type=string; label=Project repository name
-gitlabRepositoryName =
-
-# cat=GitLab//5; type=boolean; label=override existing user
-gitlabOverrideUser = 0
-
-# cat=GitLab//6; type=int; label=fallback user groups of new users if no matching found in be_groups (comma separated list possible)
-gitlabDefaultGroups =
-
-# cat=GitLab//7; type=int; label=gitlab at least user level for admin
-gitlabAdminUserLevel = 30
-
-# cat=GitLab//7; type=int; label=get db and file mounts from usergroup (0 = no, 1= only db mounts, 2 = only file mounts, 3 = both)
-gitlabUserOption = 3
+# cat=GitLab//1; type=boolean; label=override existing user
+overrideUser = 0

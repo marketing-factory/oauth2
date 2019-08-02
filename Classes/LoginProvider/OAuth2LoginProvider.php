@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Mfc\OAuth2\LoginProvider;
 
+use Mfc\OAuth2\ResourceServer\Registry;
 use TYPO3\CMS\Backend\Controller\LoginController;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -44,6 +45,8 @@ class OAuth2LoginProvider implements LoginProviderInterface
         $view->setTemplatePathAndFilename(
             GeneralUtility::getFileAbsFileName('EXT:oauth2/Resources/Private/Templates/OAuth2Login.html')
         );
+
+        $view->assign('providers', Registry::getAvailableResourceServers());
 
         if (VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
             $view->assign('baseLayout', 'OAuth2Login-9');
