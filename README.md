@@ -42,6 +42,7 @@ Mfc\OAuth2\ResourceServer\Registry::addServer(
             'gitlabAdminUserLevel' => \Mfc\OAuth2\ResourceServer\GitLab::USER_LEVEL_DEVELOPER, // User level at which the user will be given admin permissions
             'gitlabDefaultGroups'  => 0, // Groups to assign to the User
             'gitlabUserOption'     => 0, // UserConfig
+            'blockExternalUser'    => false // Blocks users with flag external from access the backend
             'projectName'          => 'your/repo', // the repository from which user information is fetched
         ],
     ]
