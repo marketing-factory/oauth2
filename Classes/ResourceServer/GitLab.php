@@ -56,6 +56,10 @@ class GitLab extends AbstractResourceServer
      */
     private $userDetailsLoaded = false;
     /**
+     * @var bool
+     */
+    private $blockExternalUser = false;
+    /**
      * @var array
      */
     private $gitlabProjectPermissions;
@@ -71,6 +75,7 @@ class GitLab extends AbstractResourceServer
         $this->adminUserLevel      = (int)$arguments['gitlabAdminUserLevel'];
         $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $arguments['gitlabDefaultGroups'], true);
         $this->userOption          = (int)$arguments['gitlabUserOption'];
+        $this->blockExternalUser   = (bool)$arguments['blockExternalUser'];
 
         $this->oauthProvider = new GitLabOAuthProvider([
             'clientId'     => $arguments['appId'],
@@ -154,6 +159,9 @@ class GitLab extends AbstractResourceServer
                 foreach ($sharedGroups as $sharedGroup) {
                     $accessLevel = max($accessLevel, $sharedGroup['group_access_level']);
                 }
+            }
+            if ($this->blockExternalUser && $user->isExternal()) {
+                $accessLevel = 0;
             }
 
             $this->gitlabProjectPermissions = [
