@@ -157,7 +157,17 @@ class GitLab extends AbstractResourceServer
             }
             if (isset($project['shared_with_groups']) && is_array($sharedGroups = $project['shared_with_groups'])) {
                 foreach ($sharedGroups as $sharedGroup) {
-                    $accessLevel = max($accessLevel, $sharedGroup['group_access_level']);
+                    try {
+                        $response = $gitlabClient
+                            ->getHttpClient()
+                            ->get('groups/' . $sharedGroup['group_id'] . '/members/' . $user->getId());
+                        // only assign access level is current user is member of group
+                        if ($response->getStatusCode() == 200) {
+                            $accessLevel = max($accessLevel, $sharedGroup['group_access_level']);
+                        }
+                    } catch (\Exception $ex) {
+                        // user has no access to see details
+                    }
                 }
             }
             if ($this->blockExternalUser && $user->isExternal()) {
