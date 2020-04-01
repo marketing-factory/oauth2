@@ -62,7 +62,11 @@ class OAuth2LoginService extends AbstractService
         array $authenticationInformation,
         AbstractUserAuthentication &$parentObject
     ) {
-        $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+        if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2'])) {
+            $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+        } elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'])) {
+            $this->extensionConfig = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'];
+        }
 
         $this->loginData = $loginData;
         $this->authenticationInformation = $authenticationInformation;
