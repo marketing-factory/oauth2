@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Service\AbstractService;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
@@ -23,7 +24,7 @@ use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
  * @package Mfc\OAuth2\Services
  * @author Christian Spoo <cs@marketing-factory.de>
  */
-class OAuth2LoginService extends AbstractService
+class OAuth2LoginService extends AbstractService implements SingletonInterface
 {
     /**
      * @var array
