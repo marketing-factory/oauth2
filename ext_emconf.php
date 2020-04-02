@@ -9,7 +9,7 @@ $EM_CONF[$_EXTKEY] = [
     'category' => 'system',
     'constraints' => [
         'depends' => [
-            'typo3' => '8.7.0-9.5.99'
+            'typo3' => '8.7.0-10.4.99'
         ],
         'conflicts' => [
         ],
@@ -26,5 +26,5 @@ $EM_CONF[$_EXTKEY] = [
     'author' => 'Christian Hellmund, Simon Schmidt, Christian Spoo',
     'author_email' => 'typo3@marketing-factory.de',
     'author_company' => 'Marketing Factory Consulting GmbH',
-    'version' => '1.1.1',
+    'version' => '1.1.2',
 ];
