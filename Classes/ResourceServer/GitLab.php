@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 
 /**
  * Class GitLab
@@ -229,7 +229,7 @@ class GitLab extends AbstractResourceServer
         $userData = $user->toArray();
 
         if (!is_array($currentRecord)) {
-            $saltingInstance = SaltFactory::getSaltingInstance(null);
+            $saltingInstance = GeneralUtility::makeInstance(PasswordHashFactory::class)->getDefaultHashInstance('FE');
 
             $currentRecord = [
                 'pid' => 0,
