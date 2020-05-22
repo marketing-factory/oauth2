@@ -11,19 +11,21 @@ use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Service\AbstractService;
+use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\HttpUtility;
-use TYPO3\CMS\Saltedpasswords\Salt\SaltFactory;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 
 /**
  * Class OAuth2LoginService
  * @package Mfc\OAuth2\Services
  * @author Christian Spoo <cs@marketing-factory.de>
  */
-class OAuth2LoginService extends AbstractService
+class OAuth2LoginService extends AbstractService implements SingletonInterface
 {
     /**
      * @var array
@@ -49,6 +51,12 @@ class OAuth2LoginService extends AbstractService
      * @var AbstractResourceServer
      */
     private $resourceServer;
+    /**
+     * User db table definition
+     *
+     * @var array
+     */
+    public $db_user = [];
 
     /**
      * @param $subType
@@ -62,7 +70,11 @@ class OAuth2LoginService extends AbstractService
         array $authenticationInformation,
         AbstractUserAuthentication &$parentObject
     ) {
-        $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+        if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2'])) {
+            $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
+        } elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'])) {
+            $this->extensionConfig = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'];
+        }
 
         $this->loginData = $loginData;
         $this->authenticationInformation = $authenticationInformation;
@@ -119,6 +131,45 @@ class OAuth2LoginService extends AbstractService
         }
 
         return null;
+    }
+
+    /**
+     * Get a user from DB by username
+     *
+     * @param string $username User name
+     * @param string $extraWhere Additional WHERE clause: " AND ...
+     * @param array|string $dbUserSetup User db table definition, or empty string for $this->db_user
+     * @return mixed User array or FALSE
+     */
+    public function fetchUserRecord($username, $extraWhere = '', $dbUserSetup = '')
+    {
+        $dbUser = is_array($dbUserSetup) ? $dbUserSetup : $this->db_user;
+        $user = false;
+        if ($username || $extraWhere) {
+            $query = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($dbUser['table']);
+            $query->getRestrictions()->removeAll()
+                ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
+            $constraints = array_filter([
+                QueryHelper::stripLogicalOperatorPrefix($dbUser['check_pid_clause']),
+                QueryHelper::stripLogicalOperatorPrefix($dbUser['enable_clause']),
+                QueryHelper::stripLogicalOperatorPrefix($extraWhere),
+            ]);
+            if (!empty($username)) {
+                array_unshift(
+                    $constraints,
+                    $query->expr()->eq(
+                        $dbUser['username_column'],
+                        $query->createNamedParameter($username, \PDO::PARAM_STR)
+                    )
+                );
+            }
+            $user = $query->select('*')
+                ->from($dbUser['table'])
+                ->where(...$constraints)
+                ->execute()
+                ->fetch();
+        }
+        return $user;
     }
 
     private function initializeOAuthProvider(string $oauthProvider)
@@ -204,7 +255,7 @@ class OAuth2LoginService extends AbstractService
         }
 
         if (!is_array($record)) {
-            $saltingInstance = SaltFactory::getSaltingInstance(null);
+            $saltingInstance = GeneralUtility::makeInstance(PasswordHashFactory::class)->getDefaultHashInstance('FE');
 
             $record = [
                 'crdate' => time(),
@@ -230,7 +281,7 @@ class OAuth2LoginService extends AbstractService
                 ->values($record)
                 ->execute();
 
-            $record = $this->parentObject->fetchUserRecord(
+            $record = $this->fetchUserRecord(
                 $this->authenticationInformation['db_user'],
                 $this->resourceServer->getUsernameFromUser($user)
             );
