@@ -151,7 +151,9 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
             $constraints = array_filter([
                 QueryHelper::stripLogicalOperatorPrefix($dbUser['check_pid_clause']),
-                QueryHelper::stripLogicalOperatorPrefix($dbUser['enable_clause']),
+                is_object($dbUser['enable_clause']) ?
+                    $dbUser['enable_clause'] :
+                    QueryHelper::stripLogicalOperatorPrefix($dbUser['enable_clause']),
                 QueryHelper::stripLogicalOperatorPrefix($extraWhere),
             ]);
             if (!empty($username)) {
@@ -282,8 +284,9 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
                 ->execute();
 
             $record = $this->fetchUserRecord(
-                $this->authenticationInformation['db_user'],
-                $this->resourceServer->getUsernameFromUser($user)
+                $this->resourceServer->getUsernameFromUser($user),
+                '',
+                $this->authenticationInformation['db_user']
             );
         } else {
             if ($this->extensionConfig['overrideUser']) {
