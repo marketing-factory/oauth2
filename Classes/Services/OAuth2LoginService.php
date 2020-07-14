@@ -56,7 +56,7 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
      *
      * @var array
      */
-    public $db_user = [];
+    public $dbUser = [];
 
     /**
      * @param $subType
@@ -138,12 +138,12 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
      *
      * @param string $username User name
      * @param string $extraWhere Additional WHERE clause: " AND ...
-     * @param array|string $dbUserSetup User db table definition, or empty string for $this->db_user
+     * @param array|string $dbUserSetup User db table definition, or empty string for $this->dbUser
      * @return mixed User array or FALSE
      */
     public function fetchUserRecord($username, $extraWhere = '', $dbUserSetup = '')
     {
-        $dbUser = is_array($dbUserSetup) ? $dbUserSetup : $this->db_user;
+        $dbUser = is_array($dbUserSetup) ? $dbUserSetup : $this->dbUser;
         $user = false;
         if ($username || $extraWhere) {
             $query = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($dbUser['table']);
