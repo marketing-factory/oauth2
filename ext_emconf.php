@@ -19,12 +19,12 @@ $EM_CONF[$_EXTKEY] = [
             'Mfc\\OAuth2\\' => 'Classes'
         ],
     ],
-    'state' => 'beta',
+    'state' => 'stable',
     'uploadfolder' => 0,
     'createDirs' => '',
     'clearCacheOnLoad' => 1,
     'author' => 'Christian Hellmund, Simon Schmidt, Christian Spoo',
     'author_email' => 'typo3@marketing-factory.de',
     'author_company' => 'Marketing Factory Consulting GmbH',
-    'version' => '1.1.1',
+    'version' => '1.1.4',
 ];
