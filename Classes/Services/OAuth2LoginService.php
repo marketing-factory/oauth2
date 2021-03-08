@@ -36,10 +36,6 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
      */
     private $authenticationInformation;
     /**
-     * @var AbstractUserAuthentication
-     */
-    private $parentObject;
-    /**
      * @var ?AccessToken
      */
     private $currentAccessToken;
@@ -62,13 +58,11 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
      * @param $subType
      * @param array $loginData
      * @param array $authenticationInformation
-     * @param AbstractUserAuthentication $parentObject
      */
     public function initAuth(
         $subType,
         array $loginData,
-        array $authenticationInformation,
-        AbstractUserAuthentication &$parentObject
+        array $authenticationInformation
     ) {
         if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2'])) {
             $this->extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
@@ -78,7 +72,7 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
 
         $this->loginData = $loginData;
         $this->authenticationInformation = $authenticationInformation;
-        $this->parentObject = $parentObject;
+        $this->dbUser = $this->authenticationInformation['db_user'];
 
         if (!is_array($_SESSION) && $_GET['loginProvider'] === '1529672977') {
             @session_start();
@@ -137,32 +131,26 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
      * Get a user from DB by username
      *
      * @param string $username User name
-     * @param string $extraWhere Additional WHERE clause: " AND ...
      * @param array|string $dbUserSetup User db table definition, or empty string for $this->dbUser
      * @return mixed User array or FALSE
      */
-    public function fetchUserRecord($username, $extraWhere = '', $dbUserSetup = '')
+    public function fetchUserRecord($username, $dbUserSetup = '')
     {
         $dbUser = is_array($dbUserSetup) ? $dbUserSetup : $this->dbUser;
         $user = false;
-        if ($username || $extraWhere) {
+        if ($username) {
             $query = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($dbUser['table']);
             $query->getRestrictions()->removeAll()
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
             $constraints = array_filter([
                 QueryHelper::stripLogicalOperatorPrefix($dbUser['check_pid_clause']),
-                QueryHelper::stripLogicalOperatorPrefix($dbUser['enable_clause']),
-                QueryHelper::stripLogicalOperatorPrefix($extraWhere),
+                $dbUser['enable_clause'],
+                $query->expr()->eq(
+                    $dbUser['username_column'],
+                    $query->createNamedParameter($username, \PDO::PARAM_STR)
+                )
             ]);
-            if (!empty($username)) {
-                array_unshift(
-                    $constraints,
-                    $query->expr()->eq(
-                        $dbUser['username_column'],
-                        $query->createNamedParameter($username, \PDO::PARAM_STR)
-                    )
-                );
-            }
+
             $user = $query->select('*')
                 ->from($dbUser['table'])
                 ->where(...$constraints)
@@ -282,8 +270,8 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
                 ->execute();
 
             $record = $this->fetchUserRecord(
-                $this->authenticationInformation['db_user'],
-                $this->resourceServer->getUsernameFromUser($user)
+                $this->resourceServer->getUsernameFromUser($user),
+                $this->authenticationInformation['db_user']
             );
         } else {
             if ($this->extensionConfig['overrideUser']) {
