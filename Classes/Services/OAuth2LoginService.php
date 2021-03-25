@@ -144,7 +144,9 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
                 ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
             $constraints = array_filter([
                 QueryHelper::stripLogicalOperatorPrefix($dbUser['check_pid_clause']),
-                $dbUser['enable_clause'],
+                is_object($dbUser['enable_clause']) ?
+                    $dbUser['enable_clause'] :
+                    QueryHelper::stripLogicalOperatorPrefix($dbUser['enable_clause']),
                 $query->expr()->eq(
                     $dbUser['username_column'],
                     $query->createNamedParameter($username, \PDO::PARAM_STR)
