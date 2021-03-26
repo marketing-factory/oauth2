@@ -34,13 +34,14 @@
     }
   },
   "require": {
-    "php": "^7.2",
-    "league/oauth2-client": "^2.3",
-    "m4tthumphrey/php-gitlab-api": "^9.19.2",
-    "omines/oauth2-gitlab": "^3.1",
-    "php-http/guzzle6-adapter": "^1.1||^2.0",
-    "typo3/cms-core": "^9.5.23||^10.4",
-    "typo3/cms-beuser": "^9.5.23||^10.4"
+    "php": "^7.4||^8.0",
+    "league/oauth2-client": "^2.6",
+    "m4tthumphrey/php-gitlab-api": "^9.19",
+    "omines/oauth2-gitlab": "^3.4",
+    "php-http/guzzle7-adapter": "^1.0",
+    "psr/http-factory": "^1.0",
+    "typo3/cms-core": "^9.5.23||^10.4||^11.1.1",
+    "typo3/cms-beuser": "^9.5.23||^10.4||^11.1.1"
   },
   "extra": {
     "typo3/cms": {

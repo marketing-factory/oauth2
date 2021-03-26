@@ -48,7 +48,9 @@ class OAuth2LoginProvider implements LoginProviderInterface
 
         $view->assign('providers', Registry::getAvailableResourceServers());
 
-        if (VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
+        if (VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 11000000) {
+            $view->assign('baseLayout', 'OAuth2Login-11');
+        } else if (VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) >= 9000000) {
             $view->assign('baseLayout', 'OAuth2Login-9');
         } else {
             $view->assign('baseLayout', 'OAuth2Login');
