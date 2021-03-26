@@ -19,7 +19,7 @@ $EM_CONF[$_EXTKEY] = [
             'Mfc\\OAuth2\\' => 'Classes'
         ],
     ],
-    'state' => 'beta',
+    'state' => 'stable',
     'uploadfolder' => 0,
     'createDirs' => '',
     'clearCacheOnLoad' => 1,
