@@ -40,10 +40,13 @@
     "omines/oauth2-gitlab": "^3.4",
     "php-http/guzzle7-adapter": "^1.0",
     "psr/http-factory": "^1.0",
-    "typo3/cms-core": "^9.5.23||^10.4||^11.1.1",
-    "typo3/cms-beuser": "^9.5.23||^10.4||^11.1.1"
+    "typo3/cms-core": "^11.1.1",
+    "typo3/cms-beuser": "^11.1.1"
   },
   "extra": {
+    "branch-alias": {
+      "dev-latest": "3.x-dev"
+    },
     "typo3/cms": {
       "extension-key": "oauth2"
     }
