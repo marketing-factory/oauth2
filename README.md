@@ -4,7 +4,7 @@ TYPO3 Extension `oauth2` (`mfc/oauth2`)
 [![Latest Stable Version](https://poser.pugx.org/mfc/oauth2/v/stable)](https://packagist.org/packages/mfc/oauth2)
 [![License](https://poser.pugx.org/mfc/oauth2/license)](https://packagist.org/packages/mfc/oauth2)
 
-This extension provides OAuth 2.0 to TYPO3 installations (only version 8LTS and the upcoming version 9 for the time being).
+This extension provides OAuth 2.0 to TYPO3 installations 9LTS and 10LTS.
 
 
 ## 1. Features
