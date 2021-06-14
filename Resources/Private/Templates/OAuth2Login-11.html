@@ -12,11 +12,16 @@
             </div>
         </f:if>
 
-        <f:for as="provider" each="{providers}">
-            <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="{provider.identifier}">
-                {provider.title}
-            </button>
-        </f:for>
+        <f:render partial="Login/InterfaceSelector" arguments="{_all}" />
+
+        <div class="form-group" id="t3-login-submit-section">
+            <f:for as="provider" each="{providers}">
+                <button class="btn btn-block btn-login t3js-login-submit" id="t3-login-submit" type="submit" name="oauth-provider" value="{provider.identifier}"
+                        data-loading-text="<i class='fa fa-circle-o-notch fa-spin'></i> {f:translate(key: 'login.process')}" autocomplete="off">
+                    {provider.title}
+                </button>
+            </f:for>
+        </div>
     </div>
 </f:section>
 </html>
