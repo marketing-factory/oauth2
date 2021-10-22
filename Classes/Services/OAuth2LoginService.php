@@ -324,7 +324,13 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
                 );
 
             foreach ($record as $key => $value) {
-                $qb->set($key, $value);
+                $type = \PDO::PARAM_STR;
+
+                if ($key === 'uc') {
+                    $type = \PDO::PARAM_LOB;
+                }
+
+                $qb->set($key, $value, true, $type);
             }
 
             $qb->execute();
