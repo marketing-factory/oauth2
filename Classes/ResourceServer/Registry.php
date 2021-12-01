@@ -18,7 +18,7 @@ class Registry
     /**
      * @var array Registered Resource Servers
      */
-    private static $registry;
+    private static $registry = [];
 
     /**
      * Registers a new ResourceServer for use within the Login Service
