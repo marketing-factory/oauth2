@@ -6,7 +6,7 @@ use Mfc\OAuth2\Services\OAuth2LoginService;
 defined('TYPO3_MODE') || die();
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addService(
-    $_EXTKEY,
+    'oauth2',
     'auth',
     OAuth2LoginService::class,
     [
