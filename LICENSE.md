@@ -1,4 +1,4 @@
-The MIT License (MIT)
+The GPL 2 License (GPL 2)
 =====================
 
 Copyright © 2018 - 2022 Christian Hellmund, Simon Schmidt and Christian Spoo.
