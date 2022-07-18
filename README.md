@@ -99,6 +99,6 @@ array(
 
 ## 3. License
 
-mfc/oauth2 is released under the terms of the [MIT License](LICENSE.md).
+mfc/oauth2 is released under the terms of the [GPL-2 License](LICENSE.md).
 
 [1]: https://getcomposer.org/
