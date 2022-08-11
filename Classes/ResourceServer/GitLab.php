@@ -146,7 +146,7 @@ class GitLab extends AbstractResourceServer
         $gitlabClient = $user->getApiClient();
 
         try {
-            $project = $gitlabClient->projects->show($this->projectName);
+            $project = $gitlabClient->projects()->show($this->projectName);
 
             $accessLevel = 0;
             if (isset($project['permissions']['project_access'])) {

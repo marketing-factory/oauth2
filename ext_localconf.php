@@ -26,6 +26,10 @@ if (isset($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2'])) {
     $extensionConfig = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['oauth2']);
 } elseif (isset($GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'])) {
     $extensionConfig = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['oauth2'];
+} else {
+    $extensionConfig = [
+        'enableBackendLogin' => false,
+    ];
 }
 
 if ($extensionConfig['enableBackendLogin']) {
