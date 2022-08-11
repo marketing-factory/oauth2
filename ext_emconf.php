@@ -3,7 +3,7 @@
 /**
  * Extension Manager/Repository config file for ext "oauth2".
  */
-$EM_CONF[$_EXTKEY] = [
+$EM_CONF['oauth2'] = [
     'title' => 'OAuth2 authentication and authorization',
     'description' => 'Generic OAuth 2.0 authentication and authorization for TYPO3 CMS',
     'category' => 'system',
