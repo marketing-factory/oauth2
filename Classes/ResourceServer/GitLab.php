@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Mfc\OAuth2\ResourceServer;
 
@@ -22,9 +22,9 @@ use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
  */
 class GitLab extends AbstractResourceServer
 {
-    public const USER_LEVEL_GUEST      = 10;
-    public const USER_LEVEL_REPORTER   = 20;
-    public const USER_LEVEL_DEVELOPER  = 30;
+    public const USER_LEVEL_GUEST = 10;
+    public const USER_LEVEL_REPORTER = 20;
+    public const USER_LEVEL_DEVELOPER = 30;
     public const USER_LEVEL_MAINTAINER = 40;
 
     /**
@@ -69,19 +69,20 @@ class GitLab extends AbstractResourceServer
      *
      * @param array $arguments
      */
-    public function __construct(array $arguments) {
-        $this->providerName        = $arguments['providerName'];
-        $this->projectName         = $arguments['projectName'];
-        $this->adminUserLevel      = (int)$arguments['gitlabAdminUserLevel'];
+    public function __construct(array $arguments)
+    {
+        $this->providerName = $arguments['providerName'];
+        $this->projectName = $arguments['projectName'];
+        $this->adminUserLevel = (int)$arguments['gitlabAdminUserLevel'];
         $this->gitlabDefaultGroups = GeneralUtility::trimExplode(',', $arguments['gitlabDefaultGroups'], true);
-        $this->userOption          = (int)$arguments['gitlabUserOption'];
-        $this->blockExternalUser   = (bool)$arguments['blockExternalUser'];
+        $this->userOption = (int)$arguments['gitlabUserOption'];
+        $this->blockExternalUser = (bool)$arguments['blockExternalUser'];
 
         $this->oauthProvider = new GitLabOAuthProvider([
-            'clientId'     => $arguments['appId'],
+            'clientId' => $arguments['appId'],
             'clientSecret' => $arguments['appSecret'],
-            'redirectUri'  => $this->getRedirectUri($arguments['providerName']),
-            'domain'       => $arguments['gitlabServer'],
+            'redirectUri' => $this->getRedirectUri($arguments['providerName']),
+            'domain' => $arguments['gitlabServer'],
         ]);
     }
 
@@ -155,21 +156,21 @@ class GitLab extends AbstractResourceServer
             if (isset($project['permissions']['group_access'])) {
                 $accessLevel = max($accessLevel, $project['permissions']['group_access']['access_level']);
             }
-            if (isset($project['shared_with_groups']) && is_array($sharedGroups = $project['shared_with_groups'])) {
-                foreach ($sharedGroups as $sharedGroup) {
-                    try {
-                        $response = $gitlabClient
-                            ->getHttpClient()
-                            ->get('groups/' . $sharedGroup['group_id'] . '/members/' . $user->getId());
-                        // only assign access level is current user is member of group
-                        if ($response->getStatusCode() == 200) {
-                            $accessLevel = max($accessLevel, $sharedGroup['group_access_level']);
-                        }
-                    } catch (\Exception $ex) {
-                        // user has no access to see details
+
+            $sharedGroups = $this->sharedGroupsForProject($gitlabClient, $project);
+            foreach ($sharedGroups as $sharedGroupId) {
+                try {
+                    $member = $gitlabClient->groups()->member($sharedGroupId, $user->getId());
+
+                    if ($member && isset($member['access_level'])) {
+                        $accessLevel = max($accessLevel, $member['access_level']);
                     }
+                } catch (\Exception $ex) {
+                    var_dump($ex);
+                    // user has no access to see details
                 }
             }
+
             if ($this->blockExternalUser && $user->isExternal()) {
                 $accessLevel = 0;
             }
@@ -182,6 +183,82 @@ class GitLab extends AbstractResourceServer
         } catch (\Exception $ex) {
             // User not authorized to access this project
         }
+    }
+
+    private function sharedGroupsForProject(Client $gitlabClient, array $project): array
+    {
+        $sharedGroups = [];
+
+        // 1. Directly associated groups
+        if (isset($project['shared_with_groups']) && is_array($project['shared_with_groups'])) {
+            $sharedGroups += array_map(
+                static function (array $groupData): int {
+                    return (int)$groupData['group_id'];
+                },
+                $project['shared_with_groups']
+            );
+        }
+
+        // 2. Workaround for a limitation of GitLab's API endpoint for retrieving inherited group memberships
+        // @see https://gitlab.com/gitlab-org/gitlab/-/issues/369592
+        if ($project['namespace']['kind'] === 'group') {
+            $inheritedGroups = [];
+            $currentGroupId = $project['namespace']['parent_id'];
+
+            // Determine all parent groups
+            while (!is_null($currentGroupId)) {
+                $inheritedGroups[] = (int)$currentGroupId;
+
+                $group = $gitlabClient->groups()->show($currentGroupId);
+
+                if (isset($group['shared_with_groups'])) {
+                    $inheritedGroups += array_map(
+                        static function (array $groupData): int {
+                            return (int)$groupData['group_id'];
+                        },
+                        $group['shared_with_groups']
+                    );
+                }
+
+                $currentGroupId = $group['parent_id'];
+            }
+
+            $sharedGroups += $inheritedGroups;
+        }
+        $sharedGroups = array_unique($sharedGroups);
+
+        // 3. Determine child groups
+        $subgroups = array_map(
+            static function (int $sharedGroup) use ($gitlabClient): array {
+                return self::subgroupsForGroup($sharedGroup, $gitlabClient);
+            },
+            $sharedGroups
+        );
+
+        return array_unique(array_merge($sharedGroups, ...$subgroups));
+    }
+
+    private static function subgroupsForGroup(int $groupId, Client $gitlabClient): array
+    {
+        $group = $gitlabClient->groups()->show($groupId);
+
+        if (!isset($group['shared_with_groups'])) {
+            return [];
+        }
+
+        $subgroups = [];
+        foreach ($group['shared_with_groups'] as $subgroup) {
+            $subgroups[] = (int)$subgroup['group_id'];
+        }
+
+        $result = $subgroups;
+        foreach ($subgroups as $subgroup) {
+            $subsubgroups = self::subgroupsForGroup($subgroup, $gitlabClient);
+
+            $result += $subsubgroups;
+        }
+
+        return array_unique($result);
     }
 
     /**
