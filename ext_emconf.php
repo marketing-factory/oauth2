@@ -26,5 +26,5 @@ $EM_CONF['oauth2'] = [
     'author' => 'Christian Hellmund, Simon Schmidt, Christian Spoo',
     'author_email' => 'typo3@marketing-factory.de',
     'author_company' => 'Marketing Factory Consulting GmbH',
-    'version' => '3.0.3',
+    'version' => '3.0.5',
 ];
