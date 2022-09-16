@@ -166,7 +166,6 @@ class GitLab extends AbstractResourceServer
                         $accessLevel = max($accessLevel, $member['access_level']);
                     }
                 } catch (\Exception $ex) {
-                    var_dump($ex);
                     // user has no access to see details
                 }
             }
@@ -203,7 +202,7 @@ class GitLab extends AbstractResourceServer
         // @see https://gitlab.com/gitlab-org/gitlab/-/issues/369592
         if ($project['namespace']['kind'] === 'group') {
             $inheritedGroups = [];
-            $currentGroupId = $project['namespace']['parent_id'];
+            $currentGroupId = $project['namespace']['id'];
 
             // Determine all parent groups
             while (!is_null($currentGroupId)) {
