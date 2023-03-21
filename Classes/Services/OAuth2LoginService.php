@@ -72,7 +72,7 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
 
         $this->loginData = $loginData;
         $this->authenticationInformation = $authenticationInformation;
-        $this->authenticationInformation['db_groups']['table'] = (($subType = 'getUserBe') ? 'be_groups' : 'fe_groups');
+        $this->authenticationInformation['db_groups']['table'] = (($subType == 'getUserBe') ? 'be_groups' : 'fe_groups');
         $this->dbUser = $this->authenticationInformation['db_user'];
 
         if (!is_array($_SESSION) && $_GET['loginProvider'] === '1529672977') {
