@@ -1,0 +1,20 @@
+# Configuration/Services.yaml
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  Mfc\OAuth2\:
+    resource: '../Classes/*'
+
+  Mfc\OAuth2\Services\OAuth2LoginService:
+    public: true
+    arguments:
+      $responseFactory: '@Psr\Http\Message\ResponseFactoryInterface'
+      $extensionConfiguration: '@TYPO3\CMS\Core\Configuration\ExtensionConfiguration'
+
+  Mfc\OAuth2\EventListener\BeforeRequestTokenProcessedListener:
+    tags:
+      - name: event.listener
+        identifier: mfcoauth2-authentication-beforerequesttokenprocessed

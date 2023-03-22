@@ -34,14 +34,14 @@
     }
   },
   "require": {
-    "php": "^7.4||^8.0",
+    "php": "^7.4 || ^8.1",
     "league/oauth2-client": "^2.6",
     "m4tthumphrey/php-gitlab-api": "^11.0",
     "omines/oauth2-gitlab": "^3.4",
     "php-http/guzzle7-adapter": "^1.0",
     "psr/http-factory": "^1.0",
-    "typo3/cms-core": "^11.1.1",
-    "typo3/cms-beuser": "^11.1.1"
+    "typo3/cms-core": "^12.2 || dev-main",
+    "typo3/cms-beuser": "^12.2 || dev-main"
   },
   "extra": {
     "branch-alias": {
