@@ -1,4 +1,6 @@
-<f:layout name="{baseLayout}" />
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:layout name="OAuth2Login" />
 
 <f:section name="loginFormFields">
     <div class="form-group t3js-login-oauth-section" id="t3-login-oauth_url-section">
@@ -12,9 +14,11 @@
         </f:if>
 
         <f:for as="provider" each="{providers}">
-            <button type="submit" class="btn btn-block btn-login" name="oauth-provider" value="{provider.identifier}">
+            <button type="submit" class="btn btn-block btn-login" name="resource-server-identifier" value="{provider.identifier}">
                 {provider.title}
             </button>
         </f:for>
     </div>
 </f:section>
+
+</html>

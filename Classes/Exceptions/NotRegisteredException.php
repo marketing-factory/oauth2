@@ -1,10 +1,6 @@
 <?php
-/**
- * NotRegisteredException.php
- *
- * @author Fabian Bettag
- * @date   25.05.2019
- */
+
+declare(strict_types=1);
 
 namespace Mfc\OAuth2\Exceptions;
 
