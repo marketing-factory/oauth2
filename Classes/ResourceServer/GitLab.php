@@ -163,10 +163,10 @@ class GitLab extends AbstractResourceServer
 
         $gitlabClient = $user->getApiClient();
 
+        $accessLevel = 0;
         try {
             $project = $gitlabClient->projects()->show($this->projectName);
 
-            $accessLevel = 0;
             $accessLevel = max($accessLevel, $project['permissions']['project_access']['access_level'] ?? 0);
             $accessLevel = max($accessLevel, $project['permissions']['group_access']['access_level'] ?? 0);
 
@@ -181,14 +181,14 @@ class GitLab extends AbstractResourceServer
                     // user has no access to see details
                 }
             }
-
-            $this->gitlabProjectPermissions = [
-                'access_level' => $accessLevel
-            ];
-            $this->userDetailsLoaded = true;
         } catch (\Exception $exception) {
             // User not authorized to access this project
         }
+
+        $this->gitlabProjectPermissions = [
+            'access_level' => $accessLevel
+        ];
+        $this->userDetailsLoaded = true;
     }
 
     public function getUsernameFromUser(ResourceOwnerInterface $user): string
