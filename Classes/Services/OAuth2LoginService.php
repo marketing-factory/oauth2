@@ -75,7 +75,7 @@ class OAuth2LoginService extends AbstractService implements SingletonInterface
         $this->dbUser = $this->authenticationInformation['db_user'];
 
         if (!is_array($_SESSION) && $_GET['loginProvider'] === '1529672977') {
-            @session_start();
+            @session_start(['cookie_httponly' => true]);
         }
     }
 
