@@ -1,5 +1,5 @@
-# cat=GitLab//0; type=boolean; label=Enable Backend Login
+# cat=gitlab; type=boolean; label=Enable Backend Login
 enableBackendLogin = 0
 
-# cat=GitLab//1; type=boolean; label=override existing user
+# cat=gitlab; type=boolean; label=override existing user
 overrideUser = 0
