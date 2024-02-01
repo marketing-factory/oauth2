@@ -16,6 +16,7 @@ use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Authentication\LoginType;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
@@ -27,7 +28,6 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashFactory;
 
 class OAuth2LoginService extends AbstractAuthenticationService implements LoggerAwareInterface
 {
@@ -296,7 +296,8 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             'starttime' => 0,
             'endtime' => 0,
             'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
-            'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
+            'password' => $saltingInstance->getHashedPassword(md5(uniqid())),
+            'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?: '', $user->toArray()),
         ];
 
         $expirationDate = null; //$this->resourceServer->userExpiresAt($user);
@@ -325,7 +326,8 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                     'disable' => 0,
                     'starttime' => 0,
                     'endtime' => 0,
-                    'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)
+                    'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
+                    'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?: '', $user->toArray()),
                 ]
             );
 
@@ -340,7 +342,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
             $record = $this->resourceServer->updateUserRecord($user, $record, $this->authInfo);
         } else {
-            $record = array_merge($record, [ 'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user) ]);
+            $record = array_merge($record, ['oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)]);
         }
 
         // update user record
@@ -379,5 +381,26 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             ->removeAll()
             ->add(GeneralUtility::makeInstance(DeletedRestriction::class));
         return $queryBuilder;
+    }
+
+    private function generateRealName(string $format, array $userdata): string
+    {
+        $values = [];
+
+        if (preg_match_all('/%(\w+)%/', $format, $matches) === 0) {
+            return '';
+        }
+
+        foreach ($matches[0] as $placeholder) {
+            $key = trim($placeholder, '%');
+
+            if (isset($userdata[$key]) && $userdata[$key] !== '') {
+                $values[$placeholder] = $userdata[$key];
+            } else {
+                $format = str_replace([$placeholder, '()'], '', $format);
+            }
+        }
+
+        return str_replace(array_keys($values), $values, $format);
     }
 }
