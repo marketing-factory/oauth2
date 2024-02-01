@@ -9,16 +9,20 @@
       "role": "Developer"
     },
     {
-      "name": "Simon Schmidt",
+      "name": "Sebastian Klein",
       "role": "Developer"
     },
     {
-      "name": "Christian Spoo",
+      "name": "Simon Schmidt",
       "role": "Developer"
     },
     {
       "name": "Karoline Steinfatt",
       "role": "Maintainer"
+    },
+    {
+      "name": "Christian Spoo",
+      "role": "Developer"
     }
   ],
   "license": [
