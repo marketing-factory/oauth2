@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Mfc\OAuth2\ResourceServer;
 
-use Gitlab\Client;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Omines\OAuth2\Client\Provider\Gitlab as GitLabOAuthProvider;
@@ -86,7 +85,7 @@ class GitLab extends AbstractResourceServer
         $this->oauthProvider = new GitLabOAuthProvider($oauthProviderConfiguration);
 
         return [
-            $this->oauthProvider->getAuthorizationUrl([ 'scope' => ['api', 'read_user', 'openid'] ]),
+            $this->oauthProvider->getAuthorizationUrl(['scope' => ['api', 'read_user', 'openid']]),
             $this->oauthProvider->getState(),
             $nonceCookie,
         ];
@@ -170,16 +169,13 @@ class GitLab extends AbstractResourceServer
             $accessLevel = max($accessLevel, $project['permissions']['project_access']['access_level'] ?? 0);
             $accessLevel = max($accessLevel, $project['permissions']['group_access']['access_level'] ?? 0);
 
-            $sharedGroups = $this->sharedGroupsForProject($gitlabClient, $project);
-            foreach ($sharedGroups as $sharedGroupId) {
-                try {
-                    $member = $gitlabClient->groups()->member($sharedGroupId, $user->getId());
-                    if ($member) {
-                        $accessLevel = max($accessLevel, $member['access_level'] ?? 0);
-                    }
-                } catch (\Exception $exception) {
-                    // user has no access to see details
+            try {
+                $member = $gitlabClient->projects()->allMember($project['id'], $user->getId());
+                if ($member) {
+                    $accessLevel = max($accessLevel, $member['access_level'] ?? 0);
                 }
+            } catch (\Exception $exception) {
+                // user has no access to see details
             }
         } catch (\Exception $exception) {
             // User not authorized to access this project
@@ -199,80 +195,6 @@ class GitLab extends AbstractResourceServer
     public function getEmailFromUser(ResourceOwnerInterface $user): string
     {
         return $user->toArray()['email'] ?? '';
-    }
-
-    private function sharedGroupsForProject(Client $gitlabClient, array $project): array
-    {
-        $sharedGroups = [];
-
-        // 1. Directly associated groups
-        if (isset($project['shared_with_groups']) && is_array($project['shared_with_groups'])) {
-            $sharedGroups += array_map(
-                static function (array $groupData): int {
-                    return (int)$groupData['group_id'];
-                },
-                $project['shared_with_groups']
-            );
-        }
-
-        // 2. Workaround for a limitation of GitLab's API endpoint for retrieving inherited group memberships
-        // @see https://gitlab.com/gitlab-org/gitlab/-/issues/369592
-        if ($project['namespace']['kind'] === 'group') {
-            $inheritedGroups = [];
-            $currentGroupId = $project['namespace']['id'];
-
-            // Determine all parent groups
-            while (!is_null($currentGroupId)) {
-                $inheritedGroups[] = (int)$currentGroupId;
-
-                $group = $gitlabClient->groups()->show($currentGroupId);
-
-                if (isset($group['shared_with_groups'])) {
-                    $inheritedGroups += array_map(
-                        static function (array $groupData): int {
-                            return (int)$groupData['group_id'];
-                        },
-                        $group['shared_with_groups']
-                    );
-                }
-
-                $currentGroupId = $group['parent_id'];
-            }
-
-            $sharedGroups += $inheritedGroups;
-        }
-        $sharedGroups = array_unique($sharedGroups);
-
-        // 3. Determine child groups
-        $subgroups = array_map(
-            function (int $sharedGroup) use ($gitlabClient): array {
-                return $this->subgroupsForGroup($sharedGroup, $gitlabClient);
-            },
-            $sharedGroups
-        );
-
-        return array_unique(array_merge($sharedGroups, ...$subgroups));
-    }
-
-    private function subgroupsForGroup(int $groupId, Client $gitlabClient): array
-    {
-        $group = $gitlabClient->groups()->show($groupId);
-
-        if (!isset($group['shared_with_groups'])) {
-            return [];
-        }
-
-        $subgroups = [];
-        foreach ($group['shared_with_groups'] as $subgroup) {
-            $subgroups[] = (int)$subgroup['group_id'];
-        }
-
-        $result = $subgroups;
-        foreach ($subgroups as $subgroup) {
-            $result += self::subgroupsForGroup($subgroup, $gitlabClient);
-        }
-
-        return array_unique($result);
     }
 
     public function updateUserRecord(
