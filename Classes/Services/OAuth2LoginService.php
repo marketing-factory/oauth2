@@ -23,6 +23,7 @@ use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Http\ApplicationType;
 use TYPO3\CMS\Core\Http\PropagateResponseException;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -72,8 +73,16 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
     public function getUser(): ?array
     {
-        if ($this->login['status'] !== LoginType::LOGIN) {
-            return null;
+        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() >= 13) {
+            // TYPO3 >= 13
+            if (LoginType::tryFrom($this->login['status'] ?? '') !== LoginType::LOGIN) {
+                return null;
+            }
+        } else {
+            // TYPO3 < 13
+            if ($this->login['status'] !== LoginType::LOGIN) {
+                return null;
+            }
         }
 
         $request = $this->getRequest();
