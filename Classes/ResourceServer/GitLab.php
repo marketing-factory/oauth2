@@ -294,7 +294,6 @@ class GitLab extends AbstractResourceServer
             $currentRecord,
             [
                 'email' => $userData['email'],
-                'realName' => $userData['name'],
                 'username' => $this->getUsernameFromUser($user),
                 'usergroup' => $this->getUserGroupsForUser(
                     $this->gitlabDefaultGroups,
