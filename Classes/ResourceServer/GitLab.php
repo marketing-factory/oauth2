@@ -85,7 +85,7 @@ class GitLab extends AbstractResourceServer
         $this->oauthProvider = new GitLabOAuthProvider($oauthProviderConfiguration);
 
         return [
-            $this->oauthProvider->getAuthorizationUrl(['scope' => ['api', 'read_user', 'openid']]),
+            $this->oauthProvider->getAuthorizationUrl([ 'scope' => ['read_api', 'read_user', 'openid'] ]),
             $this->oauthProvider->getState(),
             $nonceCookie,
         ];

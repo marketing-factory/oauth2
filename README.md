@@ -61,7 +61,7 @@ or to the equivalent page on your self-hosted GitLab server.
 When creating the application within GitLab, you might need the following information:
 
 - Redirect URI: `<your-domain-here>/typo3/index.php`
-- Scopes: `api`,`read_user`,`openid`
+- Scopes: `read_api`,`read_user`,`openid`
 
 #### 2.2) Creating your own provider
 
