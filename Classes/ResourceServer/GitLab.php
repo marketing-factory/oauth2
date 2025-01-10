@@ -279,7 +279,7 @@ class GitLab extends AbstractResourceServer
         ResourceOwnerInterface $user,
         ?array $currentRecord = null,
         array $authenticationInformation = [],
-        PasswordHashInterface $saltingInstance = null
+        ?PasswordHashInterface $saltingInstance = null
     ): array {
         $userData = $user->toArray();
 
