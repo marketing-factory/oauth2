@@ -14,7 +14,7 @@ effort to acknowledge your contributions.
 
 Report security vulnerabilities by emailing the Atomist security team at:
 
-    security@marketing-factory.der
+    security@marketing-factory.de
 
 **IMPORTANT: Do not file public issues on GitHub for security vulnerabilities**
 
