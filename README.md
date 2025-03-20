@@ -58,7 +58,7 @@ When creating the application within GitLab, you might need the following inform
 - Redirect URI: `<your-domain-here>/typo3/index.php`
 - Scopes: `api`,`read_user`,`openid`
 
-#### 2.2 Creating your own provider
+#### 2.2) Creating your own provider
 
 To create your own Provider, you need to create your own extension, and create a class which extends 
 `Mfc\OAuth2\ResourceServer\AbstractResourceServer`. You can then use the same boilerplate shown in 2.1 to register 
@@ -96,6 +96,17 @@ array(
 );
 ```
 
+#### 2.3) Change the default Cookie Settings in TYPO3
+
+To use the redirect mechanism of oAuth you must allow lax cookie settings for TYPO3:
+[cookieSameSite
+](https://docs.typo3.org/permalink/t3coreapi:confval-globals-typo3-conf-vars-be-cookiesamesite) 
+must be set to 'lax'.
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = 'lax'
+
+```
 
 ## 3. License
 
