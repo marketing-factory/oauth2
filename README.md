@@ -7,10 +7,15 @@ TYPO3 Extension `oauth2` (`mfc/oauth2`)
 This extension provides OAuth 2.0 authentication for TYPO3 installations.
 
 
+[Read more](https://www.marketing-factory.com/services/programming-and-development/custom-development/oauth2/)
+
+
 ## 1. Features
 
 - Can automatically create new backend users
 - Certain OAuth resource servers can control admin permissions and assign backend group memberships
+
+
 
 ## 2. Usage
 
