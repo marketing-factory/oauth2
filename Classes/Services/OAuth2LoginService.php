@@ -297,7 +297,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             'endtime' => 0,
             'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
             'password' => $saltingInstance->getHashedPassword(md5(uniqid())),
-            'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?: '', $user->toArray()),
+            'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?? '%name%', $user->toArray()),
         ];
 
         $expirationDate = null; //$this->resourceServer->userExpiresAt($user);
@@ -327,7 +327,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                     'starttime' => 0,
                     'endtime' => 0,
                     'oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user),
-                    'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?: '', $user->toArray()),
+                    'realName' => $this->generateRealName($this->extensionConfig['backendUserRealNameFormat'] ?? '%name%', $user->toArray()),
                 ]
             );
 
