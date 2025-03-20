@@ -112,4 +112,9 @@ $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = 'lax'
 
 mfc/oauth2 is released under the terms of the [GPL-2 License](LICENSE.md).
 
+## 4. Support
+
+Free Support is available via [Github Issue Tracker](https://github.com/marketing-factory/oauth2/issues) For commercial support, please contact us at [info@marketing-factory.de](info@marketing-factory.de)
+
+
 [1]: https://getcomposer.org/
