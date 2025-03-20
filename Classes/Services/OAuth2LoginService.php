@@ -127,7 +127,12 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
         try {
             $resourceServerIdentifier = $request->getQueryParams()['resource-server-identifier']
                 ?? $request->getParsedBody()['resource-server-identifier']
-                ?? '';
+                ?? null;
+
+            if ($resourceServerIdentifier === null) {
+                return null;
+            }
+
             $this->resourceServer = Registry::getResourceServerInstance($resourceServerIdentifier);
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
