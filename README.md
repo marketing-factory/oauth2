@@ -4,13 +4,18 @@ TYPO3 Extension `oauth2` (`mfc/oauth2`)
 [![Latest Stable Version](https://poser.pugx.org/mfc/oauth2/v/stable)](https://packagist.org/packages/mfc/oauth2)
 [![License](https://poser.pugx.org/mfc/oauth2/license)](https://packagist.org/packages/mfc/oauth2)
 
-This extension provides OAuth 2.0 to TYPO3 installations 11LTS.
+This extension provides OAuth 2.0 authentication for TYPO3 installations.
+
+
+[Read more](https://www.marketing-factory.com/services/programming-and-development/custom-development/oauth2/)
 
 
 ## 1. Features
 
 - Can automatically create new backend users
 - Certain OAuth resource servers can control admin permissions and assign backend group memberships
+
+
 
 ## 2. Usage
 
@@ -58,7 +63,7 @@ When creating the application within GitLab, you might need the following inform
 - Redirect URI: `<your-domain-here>/typo3/index.php`
 - Scopes: `read_api`,`read_user`,`openid`
 
-#### 2.2 Creating your own provider
+#### 2.2) Creating your own provider
 
 To create your own Provider, you need to create your own extension, and create a class which extends 
 `Mfc\OAuth2\ResourceServer\AbstractResourceServer`. You can then use the same boilerplate shown in 2.1 to register 
@@ -96,9 +101,25 @@ array(
 );
 ```
 
+#### 2.3) Change the default Cookie Settings in TYPO3
+
+To use the redirect mechanism of oAuth you must allow lax cookie settings for TYPO3:
+[cookieSameSite
+](https://docs.typo3.org/permalink/t3coreapi:confval-globals-typo3-conf-vars-be-cookiesamesite) 
+must be set to 'lax'.
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = 'lax'
+
+```
 
 ## 3. License
 
 mfc/oauth2 is released under the terms of the [GPL-2 License](LICENSE.md).
+
+## 4. Support
+
+Free Support is available via [Github Issue Tracker](https://github.com/marketing-factory/oauth2/issues) For commercial support, please contact us at [info@marketing-factory.de](info@marketing-factory.de)
+
 
 [1]: https://getcomposer.org/
