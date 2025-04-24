@@ -1,11 +1,10 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
-
 <f:layout name="OAuth2Login" />
 
 <f:section name="loginFormFields">
     <div class="form-group t3js-login-oauth-section" id="t3-login-oauth_url-section">
         <f:if condition="{hasOAuthLoginError}">
-            <div class="t3js-login-error" id="t3-login-error">
+            <div class="t3js-login-error mb-2" id="t3-login-error">
                 <div class="alert alert-danger">
                     <strong><f:translate key="oauth2.login.error.message" extensionName="oauth2" /></strong>
                     <p><f:translate key="oauth2.login.error.description" extensionName="oauth2" /></p>
@@ -13,12 +12,11 @@
             </div>
         </f:if>
 
-        <f:for as="provider" each="{providers}">
+        <f:for each="{oauthProviders}" as="provider">
             <button type="submit" class="btn btn-block btn-login" name="resource-server-identifier" value="{provider.identifier}">
                 {provider.title}
             </button>
         </f:for>
     </div>
 </f:section>
-
 </html>
