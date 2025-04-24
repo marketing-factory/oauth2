@@ -11,7 +11,7 @@ $EM_CONF['oauth2'] = [
     'version' => '3.3.1',
     'constraints' => [
         'depends' => [
-            'typo3' => '11.5.0-13.99.99'
+            'typo3' => '13.4.0-13.4.99'
         ],
         'conflicts' => [],
         'suggests' => [],
