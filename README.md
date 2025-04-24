@@ -25,13 +25,13 @@ The only way to install this extension is by using [Composer][1]. In your Compos
 
 ### 2) Configure the extension
 
-To add an OAuth2 Server for login, we recommend you create your own little extension, use your existing site 
-package or put the configuration in your `typo3conf/AdditionalConfiguration.php`.
+To add an OAuth2 Server for login, we recommend you create your own little extension, use your existing site
+package or put the configuration in your `config/system/additional.php`.
 
-#### 2.1) Using the GitLab Provider included in this extension  
+#### 2.1) Using the GitLab Provider included in this extension
 
-Configuring the GitLab Login Provider is pretty straight forward. Just put the following configuration into your `ext_localconf.php` 
-or the aforementioned `typo3conf/AdditionalConfiguration.php` and customize it to your needs.
+Configuring the GitLab Login Provider is pretty straight forward. Just put the following configuration into your `ext_localconf.php`
+or the aforementioned `config/system/additional.php` and customize it to your needs.
 
 ```php
 Mfc\OAuth2\ResourceServer\Registry::addServer(
@@ -52,9 +52,9 @@ Mfc\OAuth2\ResourceServer\Registry::addServer(
         ],
     ]
 );
-``` 
+```
 
-You can obtain the required information for the provider by going to either 
+You can obtain the required information for the provider by going to either
 [https://gitlab.com/profile/applications](https://gitlab.com/profile/applications) if you're using the hosted version of GitLab,
 or to the equivalent page on your self-hosted GitLab server.
 
@@ -65,10 +65,10 @@ When creating the application within GitLab, you might need the following inform
 
 #### 2.2) Creating your own provider
 
-To create your own Provider, you need to create your own extension, and create a class which extends 
-`Mfc\OAuth2\ResourceServer\AbstractResourceServer`. You can then use the same boilerplate shown in 2.1 to register 
-your newly created provider. The `arguments` array included in the provider registration will be provided as-is as 
-the first argument to your providers constructor, with the addition of a `providerName` key which contains the identifier 
+To create your own Provider, you need to create your own extension, and create a class which extends
+`Mfc\OAuth2\ResourceServer\AbstractResourceServer`. You can then use the same boilerplate shown in 2.1 to register
+your newly created provider. The `arguments` array included in the provider registration will be provided as-is as
+the first argument to your providers constructor, with the addition of a `providerName` key which contains the identifier
 you set in your registration.
 
 **Example**
@@ -105,7 +105,7 @@ array(
 
 To use the redirect mechanism of oAuth you must allow lax cookie settings for TYPO3:
 [cookieSameSite
-](https://docs.typo3.org/permalink/t3coreapi:confval-globals-typo3-conf-vars-be-cookiesamesite) 
+](https://docs.typo3.org/permalink/t3coreapi:confval-globals-typo3-conf-vars-be-cookiesamesite)
 must be set to 'lax'.
 
 ```php

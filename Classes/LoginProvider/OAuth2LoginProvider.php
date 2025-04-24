@@ -6,45 +6,47 @@ namespace Mfc\OAuth2\LoginProvider;
 
 use Mfc\OAuth2\ResourceServer\Registry;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use TYPO3\CMS\Backend\Controller\LoginController;
 use TYPO3\CMS\Backend\LoginProvider\LoginProviderInterface;
 use TYPO3\CMS\Core\Page\PageRenderer;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\View\ViewInterface;
+use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 
-class OAuth2LoginProvider implements LoginProviderInterface
+#[Autoconfigure(public: true)]
+final readonly class OAuth2LoginProvider implements LoginProviderInterface
 {
-    /**
-     * @see LoginProviderInterface::render
-     */
-    public function render(StandaloneView $view, PageRenderer $pageRenderer, LoginController $loginController)
-    {
-        $view->getRenderingContext()->setControllerAction('OAuth2Login');
-        $this->addLayoutRootPaths($view);
-        $this->addTemplateRootPaths($view);
-        $view->assign('providers', Registry::getAvailableResourceServers());
+    public function __construct(
+        private PageRenderer $pageRenderer,
+    ) {}
 
-        if (!empty($this->getRequest()->getQueryParams()['state'] ?? '')) {
+    /**
+     * @deprecated Remove in v14 when method is removed from LoginProviderInterface
+     */
+    public function render(StandaloneView $view, PageRenderer $pageRenderer, LoginController $loginController): void
+    {
+        throw new \RuntimeException('Legacy interface implementation. Should not be called', 1724768908);
+    }
+
+    public function modifyView(ServerRequestInterface $request, ViewInterface $view): string
+    {
+        if ($view instanceof FluidViewAdapter) {
+            $templatePaths = $view->getRenderingContext()->getTemplatePaths();
+            $templateRootPaths = $templatePaths->getTemplateRootPaths();
+            $templateRootPaths[] = 'EXT:oauth2/Resources/Private/Templates';
+            $templatePaths->setTemplateRootPaths($templateRootPaths);
+            $layoutPaths = $view->getRenderingContext()->getTemplatePaths();
+            $layoutRootPaths = $layoutPaths->getLayoutRootPaths();
+            $layoutRootPaths[] = 'EXT:oauth2/Resources/Private/Layouts';
+            $layoutPaths->setLayoutRootPaths($layoutRootPaths);
+            $view->assign('oauthProviders', Registry::getAvailableResourceServers());
+        }
+
+        if (!empty($request->getQueryParams()['state'] ?? '')) {
             $view->assign('hasOAuthLoginError', true);
         }
-    }
 
-    private function addLayoutRootPaths(StandaloneView $view): void
-    {
-        $layoutPaths = $view->getLayoutRootPaths();
-        array_unshift($layoutPaths, 'EXT:oauth2/Resources/Private/Layouts/');
-        $view->setLayoutRootPaths($layoutPaths);
-    }
-
-    private function addTemplateRootPaths(StandaloneView $view): void
-    {
-        $templateRootPaths = $view->getTemplateRootPaths();
-        array_unshift($templateRootPaths, 'EXT:oauth2/Resources/Private/Templates/');
-        $view->setTemplateRootPaths($templateRootPaths);
-    }
-
-    protected function getRequest(): ServerRequestInterface
-    {
-        return $GLOBALS['TYPO3_REQUEST'];
+        return 'OAuth2Login';
     }
 }
