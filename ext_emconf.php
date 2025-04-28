@@ -7,11 +7,11 @@ $EM_CONF['oauth2'] = [
     'state' => 'stable',
     'author' => 'Christian Hellmund, Sebastian Klein, Simon Schmidt, Karoline Steinfatt, Christian Spoo',
     'author_email' => 'typo3@marketing-factory.de',
-    'author_company' => 'Marketing Factory Consulting GmbH',
+    'author_company' => 'Marketing Factory Digital GmbH',
     'version' => '3.3.1',
     'constraints' => [
         'depends' => [
-            'typo3' => '11.5.0-13.99.99'
+            'typo3' => '13.4.0-13.4.99'
         ],
         'conflicts' => [],
         'suggests' => [],
