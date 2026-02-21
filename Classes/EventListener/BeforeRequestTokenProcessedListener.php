@@ -7,16 +7,12 @@ namespace Mfc\OAuth2\EventListener;
 use TYPO3\CMS\Core\Authentication\Event\BeforeRequestTokenProcessedEvent;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\SecurityAspect;
-use TYPO3\CMS\Core\Security\JwtTrait;
 use TYPO3\CMS\Core\Security\RequestToken;
-use TYPO3\CMS\Core\Security\SecretIdentifier;
 use TYPO3\CMS\Core\Security\SigningSecretResolver;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 final class BeforeRequestTokenProcessedListener
 {
-    use JwtTrait;
-
     public function __invoke(BeforeRequestTokenProcessedEvent $event): void
     {
         $request = $event->getRequest();
@@ -31,13 +27,9 @@ final class BeforeRequestTokenProcessedListener
             }
 
             $jwt = $request->getQueryParams()[RequestToken::PARAM_NAME];
-
             $signingSecretResolver = $this->getSigningSecretResolver();
-            [$identifier, $secret] = $this->getSecretAndIdentifier($jwt, $signingSecretResolver);
 
-            $event->setRequestToken(RequestToken::fromHashSignedJwt($jwt, $secret));
-
-            $signingSecretResolver->revokeIdentifier($identifier);
+            $event->setRequestToken(RequestToken::fromHashSignedJwt($jwt, $signingSecretResolver));
         }
     }
 
@@ -46,13 +38,5 @@ final class BeforeRequestTokenProcessedListener
         $context = GeneralUtility::makeInstance(Context::class);
         $securityAspect = SecurityAspect::provideIn($context);
         return $securityAspect->getSigningSecretResolver();
-    }
-
-    private function getSecretAndIdentifier(string $jwt, SigningSecretResolver $signingSecretResolver): array
-    {
-        $kid = (string)self::decodeJwtHeader($jwt, 'kid');
-        $identifier = SecretIdentifier::fromJson($kid);
-        $secret = $signingSecretResolver->findByIdentifier($identifier);
-        return [$identifier, $secret];
     }
 }
