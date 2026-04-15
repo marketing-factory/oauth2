@@ -22,9 +22,10 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
+use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Http\ApplicationType;
+use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\PropagateResponseException;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -65,24 +66,12 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
         $this->authInfo['db_groups']['table'] = (($mode == 'getUserBE') ? 'be_groups' : 'fe_groups');
         $this->db_user = $this->authInfo['db_user'];
 
-        $request = $this->getRequest();
-        if (!isset($_SESSION) && ($request->getQueryParams()['loginProvider'] ?? '') === '1529672977') {
-            @session_start();
-        }
     }
 
     public function getUser(): ?array
     {
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() >= 13) {
-            // TYPO3 >= 13
-            if (LoginType::tryFrom($this->login['status'] ?? '') !== LoginType::LOGIN) {
-                return null;
-            }
-        } else {
-            // TYPO3 < 13
-            if ($this->login['status'] !== LoginType::LOGIN) {
-                return null;
-            }
+        if (LoginType::tryFrom($this->login['status'] ?? '') !== LoginType::LOGIN) {
+            return null;
         }
 
         $request = $this->getRequest();
@@ -100,8 +89,6 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                 return $this->findOrCreateUserByResourceOwner($resourceOwner);
             }
         }
-        unset($_SESSION['oauth2state']);
-
         return null;
     }
 
@@ -143,19 +130,26 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     protected function sendOAuthRedirect(): void
     {
         [$authorizationUrl, $oauth2state, $nonceCookie] = $this->resourceServer->getAuthorizationUrl();
-        $_SESSION['oauth2state'] = $oauth2state;
+
+        $request = $this->getRequest();
+        $normalizedParams = $request->getAttribute('normalizedParams');
+        $secure = $normalizedParams instanceof NormalizedParams && $normalizedParams->isHttps();
+        $path = $normalizedParams instanceof NormalizedParams ? $normalizedParams->getSitePath() : '/';
+        $stateCookie = new Cookie('typo3_oauth2_state', $oauth2state, 0, $path, null, $secure, true, false, Cookie::SAMESITE_LAX);
 
         $response = $this->responseFactory
             ->createResponse(303)
             ->withAddedHeader('location', $authorizationUrl)
-            ->withAddedHeader('Set-Cookie', (string)$nonceCookie);
+            ->withAddedHeader('Set-Cookie', (string)$nonceCookie)
+            ->withAddedHeader('Set-Cookie', (string)$stateCookie);
 
         throw new PropagateResponseException($response);
     }
 
     protected function isOAuthRedirectRequest(string $state): bool
     {
-        return $state === $_SESSION['oauth2state'];
+        $cookieState = $this->getRequest()->getCookieParams()['typo3_oauth2_state'] ?? null;
+        return $cookieState !== null && $state === $cookieState;
     }
 
     protected function getAccessToken(ServerRequestInterface $request): ?AccessToken

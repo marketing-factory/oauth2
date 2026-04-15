@@ -22,10 +22,6 @@ final class BeforeRequestTokenProcessedListener
         }
 
         if (array_key_exists(RequestToken::PARAM_NAME, $request->getQueryParams())) {
-            if (!isset($_SESSION) && ($request->getQueryParams()['loginProvider'] ?? '') === '1529672977') {
-                @session_start();
-            }
-
             $jwt = $request->getQueryParams()[RequestToken::PARAM_NAME];
             $signingSecretResolver = $this->getSigningSecretResolver();
 
