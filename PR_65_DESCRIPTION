@@ -1,0 +1,45 @@
+## Description
+
+This PR implements TYPO3 14 compatibility for the OAuth2 extension by addressing two critical issues:
+
+### 1. OAuth State Storage: Session → SameSite=Lax Cookie
+
+**Problem**: TYPO3 14's backend context enforces `SameSite=Strict` cookies, which are not sent by browsers on cross-site redirects (e.g., GitLab OAuth callbacks). This caused `$_SESSION['oauth2state']` to be undefined on the callback request, triggering TYPO3's error handler and resulting in fatal exceptions.
+
+**Solution**: Replace PHP session-based state storage with a `typo3_oauth2_state` cookie using `SameSite=Lax`, which correctly forwards on top-level cross-site navigations while maintaining security. The cookie includes:
+- Secure flag (when HTTPS)
+- HttpOnly flag
+- Site path from normalized params
+- Proper SameSite=Lax attribute
+
+**Changes**:
+- `OAuth2LoginService.php`: Replace session variable with cookie-based state storage in `sendOAuthRedirect()` and `isOAuthRedirectRequest()`
+- `BeforeRequestTokenProcessedListener.php`: Remove redundant `session_start()` calls
+- Remove deprecated session cleanup in `getUser()`
+
+### 2. Dead Code Removal & Compatibility Alignment
+
+**Problem**: 
+- Stale version checks for TYPO3 < 13 (now unsupported)
+- `render()` method references removed classes (`StandaloneView`) that were removed in TYPO3 14
+- Outdated `Typo3Version` utility usage
+
+**Solution**: Clean up dead code while maintaining v13 interface compatibility:
+- Remove TYPO3 < 13 version branching in `getUser()`
+- Restore `render()` stub in `OAuth2LoginProvider.php` to satisfy v13's `LoginProviderInterface` contract (method is never called since TYPO3 v12+ prefers `modifyView()`)
+- Type hints for `StandaloneView` and `LoginController` are safe because PHP resolves parameter types lazily
+- Remove unused `Typo3Version` import
+
+**Files Modified**: 3
+- `Classes/Services/OAuth2LoginService.php` (+14, -20)
+- `Classes/LoginProvider/OAuth2LoginProvider.php` (+1, -1)
+- `Classes/EventListener/BeforeRequestTokenProcessedListener.php` (-4)
+
+**Tested With**: TYPO3 13 & 14
+
+### Impact
+
+✅ Enables OAuth2 callbacks to work correctly in TYPO3 14
+✅ Maintains backward compatibility with TYPO3 13
+✅ Removes deprecated/dead code
+✅ Improves security with SameSite cookie flags
