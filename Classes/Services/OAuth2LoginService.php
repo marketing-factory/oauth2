@@ -162,7 +162,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
         $accessToken = null;
         try {
             $requestToken = $request->getQueryParams()[RequestToken::PARAM_NAME];
-            $accessToken = $this->resourceServer
+            $token = $this->resourceServer
                 ->getOAuthProvider($requestToken)
                 ->getAccessToken(
                     'authorization_code',
@@ -170,6 +170,9 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                         'code' => $request->getQueryParams()['code'] ?? '',
                     ]
                 );
+            if ($token instanceof AccessToken) {
+                $accessToken = $token;
+            }
         } catch (\Exception $exception) {
             $this->logger->error($exception->getMessage());
         }

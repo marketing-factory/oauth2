@@ -1,2 +1,7 @@
 parameters:
 	ignoreErrors:
+		-
+			message: '#^Parameter \$view of method Mfc\\OAuth2\\LoginProvider\\OAuth2LoginProvider\:\:render\(\) has invalid type TYPO3\\CMS\\Fluid\\View\\StandaloneView\.$#'
+			identifier: class.notFound
+			count: 1
+			path: ../../Classes/LoginProvider/OAuth2LoginProvider.php

@@ -21,7 +21,7 @@ interface ResourceServerInterface
     public function getOAuthProvider(string $requestToken = ''): AbstractProvider;
 
     /**
-     * @return array<string, string, Cookie>
+     * @return array{0: string, 1: string, 2: Cookie}
      */
     public function getAuthorizationUrl(): array;
 
@@ -41,8 +41,8 @@ interface ResourceServerInterface
 
     public function updateUserRecord(
         ResourceOwnerInterface $user,
-        array $currentRecord,
+        ?array $currentRecord,
         array $authenticationInformation,
-        PasswordHashInterface $saltingInstance
+        ?PasswordHashInterface $saltingInstance = null
     ): array;
 }

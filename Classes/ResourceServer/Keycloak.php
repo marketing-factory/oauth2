@@ -31,7 +31,7 @@ class Keycloak extends AbstractResourceServer
     private bool $userDetailsLoaded = false;
 
     /**
-     * @var int[]
+     * @var list<string>
      */
     private array $keycloakDefaultGroups = [];
 
