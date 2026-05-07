@@ -158,7 +158,8 @@ class GitLab extends AbstractResourceServer
 
         if (!$user instanceof GitlabResourceOwner) {
             throw new \InvalidArgumentException(
-                'Resource owner "' . $user->getId() . '" is no suitable GitLab resource owner', 8086616547
+                'Resource owner "' . $user->getId() . '" is no suitable GitLab resource owner',
+                8086616547
             );
         }
 

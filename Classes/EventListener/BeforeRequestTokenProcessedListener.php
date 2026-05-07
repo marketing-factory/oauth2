@@ -19,9 +19,8 @@ use TYPO3\CMS\Core\Security\SigningSecretResolver;
 
 final readonly class BeforeRequestTokenProcessedListener
 {
-    public function __construct(private Context $context)
-    {
-    }
+    public function __construct(private Context $context) {}
+
     public function __invoke(BeforeRequestTokenProcessedEvent $event): void
     {
         $request = $event->getRequest();

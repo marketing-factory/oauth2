@@ -112,7 +112,8 @@ class Keycloak extends AbstractResourceServer
 
         if (!$user instanceof KeycloakResourceOwner) {
             throw new \InvalidArgumentException(
-                'Resource owner "' . $user->getId() . '" is no suitable Keycloak resource owner', 2571410682
+                'Resource owner "' . $user->getId() . '" is no suitable Keycloak resource owner',
+                2571410682
             );
         }
 

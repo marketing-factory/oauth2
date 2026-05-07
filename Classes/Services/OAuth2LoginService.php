@@ -378,7 +378,6 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
     protected function getQueryBuilderForTable(string $table): QueryBuilder
     {
-        /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         $queryBuilder
             ->getRestrictions()
