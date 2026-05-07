@@ -5,17 +5,82 @@ on:
     tags:
       - '*'
 
+env:
+  TYPO3_EXTENSION_KEY: oauth2
+  EXTENSION_ARTEFACT: oauth2_${{ github.ref_name }}.zip
+
 jobs:
-  release:
-    name: Create GitHub Release and Publish to TER
+  build:
+    name: Build extension artefact
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      # Check if tag is valid
+      - name: Check tag
+        run: |
+          if ! [[ ${{ github.ref_name }} =~ ^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$ ]]; then
+            exit 1
+          fi
+
+      # Prepare environment
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.5
+          tools: composer:v2, typo3/tailor
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@4.0.0
+
+      - name: Create artefact
+        run: |
+          php ~/.composer/vendor/bin/tailor set-version "${{ github.ref_name }}"
+          php ~/.composer/vendor/bin/tailor create-artefact "${{ github.ref_name }}"
+
+      - name: Upload extension artefact
+        uses: actions/upload-artifact@v7
+        with:
+          name: extension-artefact
+          path: tailor-version-artefact/${{ env.EXTENSION_ARTEFACT }}
+
+  release:
+    name: Create release
+    needs: [build]
+    runs-on: ubuntu-latest
+    outputs:
+      release-notes-url: ${{ steps.create-release.outputs.url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download extension artefact
+        id: download
+        uses: actions/download-artifact@v8
+        with:
+          name: extension-artefact
+
+      - name: Create release
+        id: create-release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: ${{ steps.download.outputs.download-path }}/${{ env.EXTENSION_ARTEFACT }}
+
+  ter-publish:
+    name: Publish on TER
+    needs: [release]
+    runs-on: ubuntu-latest
+    env:
+      TYPO3_API_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download extension artefact
+        id: download
+        uses: actions/download-artifact@v8
+        with:
+          name: extension-artefact
 
       - name: Get tag message
         id: tag-message
@@ -26,33 +91,17 @@ jobs:
             echo EOF
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: ${{ steps.tag-message.outputs.body }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
-          tools: composer
+          php-version: 8.5
+          extensions: intl, mbstring, json, zip, curl
+          tools: composer:v2, typo3/tailor
 
-      - name: Install Tailor
-        run: composer global require typo3/tailor
-
-      - name: Set extension version
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          TAG="${TAG#v}"
-          ~/.composer/vendor/bin/tailor set-version "$TAG"
-
+      # Release
       - name: Publish to TER
-        env:
-          TYPO3_API_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          TAG="${TAG#v}"
-          ~/.composer/vendor/bin/tailor ter:publish --comment "${{ steps.tag-message.outputs.body }}" "$TAG"
+          php ~/.composer/vendor/bin/tailor ter:publish \
+            --comment "${{ steps.get-comment.outputs.body }}" \
+            --artefact "${{ steps.download.outputs.download-path }}/${{ env.EXTENSION_ARTEFACT }}" \
+            "${{ github.ref_name }}"
