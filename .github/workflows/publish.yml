@@ -1,4 +1,4 @@
-name: Publish
+name: Create GitHub Release and Publish to TER
 
 on:
   push:
@@ -6,62 +6,53 @@ on:
       - '*'
 
 jobs:
-  publish:
-    name: Publish new version to TER
-    if: startsWith(github.ref, 'refs/tags/')
+  release:
+    name: Create GitHub Release and Publish to TER
     runs-on: ubuntu-latest
-    env:
-      TYPO3_EXTENSION_KEY: ${{ secrets.TYPO3_EXTENSION_KEY }}
-      TYPO3_API_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
+
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Check tag
+      - name: Get tag message
+        id: tag-message
         run: |
-          if ! [[ ${{ github.ref }} =~ ^refs/tags/[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$ ]]; then
-            exit 1
-          fi
-      - name: Get version
-        id: get-version
-        run: |
-          echo "terversion=$(echo ${GITHUB_REF/refs\/tags\//} | sed 's/^v//')" >> $GITHUB_OUTPUT
-          echo "version=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_OUTPUT
+          {
+            echo 'body<<EOF'
+            git tag -l --format='%(contents)' '${{ github.ref_name }}'
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
 
-
-      - name: Get comment
-        id: get-comment
-        run: echo "comment=${{ github.event.release.body }}" >> $GITHUB_OUTPUT
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.tag-message.outputs.body }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.4
-          extensions: intl, mbstring, json, zip, curl
-          tools: composer:v2, typo3/tailor,
+          php-version: '8.2'
+          tools: composer
 
+      - name: Install Tailor
+        run: composer global require typo3/tailor
+
+      - name: Set extension version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="${TAG#v}"
+          ~/.composer/vendor/bin/tailor set-version "$TAG"
 
       - name: Publish to TER
+        env:
+          TYPO3_API_TOKEN: ${{ secrets.TYPO3_API_TOKEN }}
         run: |
-          php ~/.composer/vendor/bin/tailor set-version "${{ steps.get-version.outputs.terversion }}"
-          php ~/.composer/vendor/bin/tailor ter:publish --comment "${{ steps.get-comment.outputs.comment }}" \
-              ${{ steps.get-version.outputs.terversion }}
-        continue-on-error: true
-
-      - name: Create Standalone zip
-        run: |
-          php ~/.composer/vendor/bin/tailor set-version "${{ steps.get-version.outputs.terversion }}"
-          php ~/.composer/vendor/bin/tailor create-artefact \
-              ${{ steps.get-version.outputs.terversion }}  ${{ env.TYPO3_EXTENSION_KEY }} 
-
-      - name:  upload artifacts in the same step
-        uses: softprops/action-gh-release@v2
-        if: ${{startsWith(github.ref, 'refs/tags/') }}
-        with:
-          name: "[RELEASE] ${{ steps.get-version.outputs.version }}"
-          body: "${{ steps.get-comment.outputs.comment }}"
-          generate_release_notes: true
-          files: |
-            tailor-version-artefact/${{ env.TYPO3_EXTENSION_KEY }}_${{ steps.get-version.outputs.terversion }}.zip
-          fail_on_unmatched_files: true
+          TAG="${GITHUB_REF#refs/tags/}"
+          TAG="${TAG#v}"
+          ~/.composer/vendor/bin/tailor ter:publish --comment "${{ steps.tag-message.outputs.body }}" "$TAG"

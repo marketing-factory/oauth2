@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 $EM_CONF['oauth2'] = [
     'title' => 'OAuth2 authentication and authorization',
     'description' => 'Generic OAuth 2.0 authentication and authorization for TYPO3 CMS',
@@ -11,7 +20,7 @@ $EM_CONF['oauth2'] = [
     'version' => '3.3.1',
     'constraints' => [
         'depends' => [
-            'typo3' => '13.4.0-13.4.99'
+            'typo3' => '13.4.0-14.4.99',
         ],
         'conflicts' => [],
         'suggests' => [],

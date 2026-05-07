@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Mfc\OAuth2\LoginProvider;
 
 use Mfc\OAuth2\ResourceServer\Registry;
@@ -24,7 +31,7 @@ final readonly class OAuth2LoginProvider implements LoginProviderInterface
     /**
      * @deprecated Satisfies the v13 LoginProviderInterface contract. TYPO3 v12+ prefers modifyView() and will not call this.
      */
-    public function render(StandaloneView $view, PageRenderer $pageRenderer, LoginController $loginController): void
+    public function render(StandaloneView $view, PageRenderer $pageRenderer, LoginController $loginController): never
     {
         throw new \RuntimeException('Legacy interface implementation. Should not be called', 1724768908);
     }

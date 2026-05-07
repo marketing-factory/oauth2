@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Mfc\OAuth2\Services;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
@@ -12,6 +19,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Authentication\AbstractAuthenticationService;
 use TYPO3\CMS\Core\Authentication\AbstractUserAuthentication;
 use TYPO3\CMS\Core\Authentication\LoginType;
@@ -22,7 +30,6 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\QueryHelper;
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use Symfony\Component\HttpFoundation\Cookie;
 use TYPO3\CMS\Core\Http\ApplicationType;
 use TYPO3\CMS\Core\Http\NormalizedParams;
 use TYPO3\CMS\Core\Http\PropagateResponseException;
@@ -34,8 +41,6 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 {
     use LoggerAwareTrait;
 
-    private ResponseFactoryInterface $responseFactory;
-
     private array $extensionConfig;
 
     private ?AccessToken $accessToken = null;
@@ -43,10 +48,10 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     private ?AbstractResourceServer $resourceServer = null;
 
     public function __construct(
-        ResponseFactoryInterface $responseFactory,
-        ExtensionConfiguration $extensionConfiguration
+        private ResponseFactoryInterface $responseFactory,
+        ExtensionConfiguration $extensionConfiguration,
+        private readonly ConnectionPool $connectionPool
     ) {
-        $this->responseFactory = $responseFactory;
         $this->extensionConfig = $extensionConfiguration->get('oauth2');
     }
 
@@ -56,7 +61,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
      * @param array $authInfo
      * @param AbstractUserAuthentication $pObj
      */
-    public function initAuth($mode, $loginData, $authInfo, $pObj)
+    public function initAuth($mode, $loginData, $authInfo, $pObj): void
     {
         $this->pObj = $pObj;
         // subtype
@@ -76,7 +81,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
         $request = $this->getRequest();
 
-        if (!$this->initializeResourceServer($request)) {
+        if (!$this->initializeResourceServer($request) instanceof AbstractResourceServer) {
             return null;
         }
 
@@ -85,7 +90,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             $this->sendOAuthRedirect();
         } elseif ($this->isOAuthRedirectRequest($state)) {
             $this->accessToken = $this->getAccessToken($request);
-            if ($resourceOwner = $this->getResourceOwner($this->accessToken)) {
+            if (($resourceOwner = $this->getResourceOwner($this->accessToken)) instanceof ResourceOwnerInterface) {
                 return $this->findOrCreateUserByResourceOwner($resourceOwner);
             }
         }
@@ -98,10 +103,10 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
         // Check if $this->resourceServer is already instantiated
         // (this indicates that we were previously in the getUser() function)
-        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer !== null) {
+        if ($userRecord['oauth_identifier'] !== '' && $this->resourceServer instanceof AbstractResourceServer) {
             $resourceOwner = $this->getResourceOwner($this->accessToken);
 
-            if ($this->accessToken && $this->resourceServer->userIsActive($resourceOwner)) {
+            if ($this->accessToken instanceof AccessToken && $this->resourceServer->userIsActive($resourceOwner)) {
                 $result = 200;
             }
         }
@@ -143,7 +148,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             ->withAddedHeader('Set-Cookie', (string)$nonceCookie)
             ->withAddedHeader('Set-Cookie', (string)$stateCookie);
 
-        throw new PropagateResponseException($response);
+        throw new PropagateResponseException($response, 2606115161);
     }
 
     protected function isOAuthRedirectRequest(string $state): bool
@@ -162,7 +167,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                 ->getAccessToken(
                     'authorization_code',
                     [
-                        'code' => $request->getQueryParams()['code'] ?? ''
+                        'code' => $request->getQueryParams()['code'] ?? '',
                     ]
                 );
         } catch (\Exception $exception) {
@@ -174,7 +179,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     protected function getResourceOwner(AccessToken $accessToken): ?ResourceOwnerInterface
     {
         $record = null;
-        if ($this->accessToken) {
+        if ($this->accessToken instanceof AccessToken) {
             try {
                 $record = $this->resourceServer
                     ->getOAuthProvider()
@@ -191,12 +196,12 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
         // Try to find the user first by its OAuth Identifier
         $record = $this->findUserByOauthIdentifier($user);
 
-        if (empty($record)) {
+        if ($record === null || $record === []) {
             // previous user record by gitlab id not found, find by username and email
             $record = $this->findUserByUsernameOrEmail($user);
         }
 
-        if (!empty($record)) {
+        if ($record !== null && $record !== []) {
             // previous user record found
             $this->updateFoundUser($user, $record);
         } else {
@@ -212,7 +217,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     protected function findUserByUsername(string $username): ?array
     {
         $user = null;
-        if ($username) {
+        if ($username !== '' && $username !== '0') {
             $queryBuilder = $this->getQueryBuilderForTable($this->db_user['table']);
 
             $constraints = array_filter([
@@ -220,7 +225,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
                 $queryBuilder->expr()->eq(
                     $this->db_user['username_column'],
                     $queryBuilder->createNamedParameter($username)
-                )
+                ),
             ]);
 
             $user = $queryBuilder
@@ -374,7 +379,7 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     protected function getQueryBuilderForTable(string $table): QueryBuilder
     {
         /** @var QueryBuilder $queryBuilder */
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         $queryBuilder
             ->getRestrictions()
             ->removeAll()

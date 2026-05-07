@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Mfc\OAuth2\ResourceServer;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
@@ -17,25 +24,28 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class GitLab extends AbstractResourceServer
 {
     public const USER_LEVEL_GUEST = 10;
+
     public const USER_LEVEL_REPORTER = 20;
+
     public const USER_LEVEL_DEVELOPER = 30;
+
     public const USER_LEVEL_MAINTAINER = 40;
 
-    private int $adminUserLevel;
+    private readonly int $adminUserLevel;
 
-    private array $gitlabDefaultGroups;
+    private readonly array $gitlabDefaultGroups;
 
-    private int $userOption;
+    private readonly int $userOption;
 
-    private string $providerName;
+    private readonly string $providerName;
 
-    private string $projectName;
+    private readonly string $projectName;
 
-    private bool $blockExternalUser;
+    private readonly bool $blockExternalUser;
 
-    private ?array $gitlabProjectPermissions;
+    private ?array $gitlabProjectPermissions = null;
 
-    private array $oauthProviderConfiguration;
+    private readonly array $oauthProviderConfiguration;
 
     private AbstractProvider $oauthProvider;
 
@@ -139,7 +149,7 @@ class GitLab extends AbstractResourceServer
             return;
         }
 
-        if (empty($this->projectName)) {
+        if ($this->projectName === '' || $this->projectName === '0') {
             throw new \InvalidArgumentException(
                 'A "projectName" must be set in order for the GitLab Provider to function',
                 1558972080
@@ -148,13 +158,13 @@ class GitLab extends AbstractResourceServer
 
         if (!$user instanceof GitlabResourceOwner) {
             throw new \InvalidArgumentException(
-                'Resource owner "' . $user->getId() . '" is no suitable GitLab resource owner'
+                'Resource owner "' . $user->getId() . '" is no suitable GitLab resource owner', 8086616547
             );
         }
 
         if ($this->blockExternalUser && $user->isExternal()) {
             $this->gitlabProjectPermissions = [
-                'access_level' => 0
+                'access_level' => 0,
             ];
             $this->userDetailsLoaded = true;
             return;
@@ -174,15 +184,15 @@ class GitLab extends AbstractResourceServer
                 if ($member) {
                     $accessLevel = max($accessLevel, $member['access_level'] ?? 0);
                 }
-            } catch (\Exception $exception) {
+            } catch (\Exception) {
                 // user has no access to see details
             }
-        } catch (\Exception $exception) {
+        } catch (\Exception) {
             // User not authorized to access this project
         }
 
         $this->gitlabProjectPermissions = [
-            'access_level' => $accessLevel
+            'access_level' => $accessLevel,
         ];
         $this->userDetailsLoaded = true;
     }
@@ -208,7 +218,7 @@ class GitLab extends AbstractResourceServer
         if (!is_array($currentRecord)) {
             $currentRecord = [
                 'pid' => 0,
-                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
+                'password' => $saltingInstance->getHashedPassword(md5(uniqid())),
             ];
         }
 
@@ -222,7 +232,7 @@ class GitLab extends AbstractResourceServer
                     $this->gitlabProjectPermissions['access_level'],
                     $authenticationInformation['db_groups']['table']
                 ),
-                'options' => $this->userOption
+                'options' => $this->userOption,
             ]
         );
     }
@@ -236,7 +246,7 @@ class GitLab extends AbstractResourceServer
 
         if ($userLevel > 0) {
             $tempGroups = $this->getUserGroupsForAccessLevel($userLevel, $table);
-            if (!empty($tempGroups)) {
+            if ($tempGroups !== []) {
                 $userGroups = $tempGroups;
             }
         }

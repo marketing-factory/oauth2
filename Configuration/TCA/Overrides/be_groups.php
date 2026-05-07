@@ -1,8 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 defined('TYPO3') || die();
 
-call_user_func(function () {
+call_user_func(function (): void {
     $columns = [
         'gitlabGroup' => [
             'exclude' => 1,
@@ -21,6 +32,6 @@ call_user_func(function () {
         ],
     ];
 
-    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addTCAcolumns('be_groups', $columns);
-    \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addToAllTCAtypes('be_groups', 'gitlabGroup');
+    ExtensionManagementUtility::addTCAcolumns('be_groups', $columns);
+    ExtensionManagementUtility::addToAllTCAtypes('be_groups', 'gitlabGroup');
 });

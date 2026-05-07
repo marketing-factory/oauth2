@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Mfc\OAuth2\ResourceServer;
 
 use Psr\Http\Message\ServerRequestInterface;
@@ -20,6 +27,7 @@ abstract class AbstractResourceServer implements ResourceServerInterface
     use CookieHeaderTrait;
 
     protected const COOKIE_PREFIX = 'typo3nonce_';
+
     protected const SECURE_PREFIX = '__Secure-';
 
     protected function getRedirectUri(
@@ -82,7 +90,7 @@ abstract class AbstractResourceServer implements ResourceServerInterface
         $securePrefix = $secure ? self::SECURE_PREFIX : '';
         $cookiePrefix = $securePrefix . self::COOKIE_PREFIX;
 
-        $createCookie = static fn (string $name, string $value, int $expire): Cookie => new Cookie(
+        $createCookie = static fn(string $name, string $value, int $expire): Cookie => new Cookie(
             $name,
             $value,
             $expire,

@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 namespace Mfc\OAuth2\ResourceServer;
 
 use League\OAuth2\Client\Provider\AbstractProvider;
@@ -9,19 +16,20 @@ use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Stevenmaguire\OAuth2\Client\Provider\Keycloak as KeycloakOAuthProvider;
 use Stevenmaguire\OAuth2\Client\Provider\KeycloakResourceOwner;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashInterface;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
-use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class Keycloak extends AbstractResourceServer
 {
-    private string $providerName;
-    private AbstractProvider $oauthProvider;
-    private array $oauthProviderConfiguration;
+    private readonly string $providerName;
 
-    private int $userOption;
+    private AbstractProvider $oauthProvider;
+
+    private readonly array $oauthProviderConfiguration;
+
+    private readonly int $userOption;
+
     private bool $userDetailsLoaded = false;
+
     /**
      * @var int[]
      */
@@ -104,7 +112,7 @@ class Keycloak extends AbstractResourceServer
 
         if (!$user instanceof KeycloakResourceOwner) {
             throw new \InvalidArgumentException(
-                'Resource owner "' . $user->getId() . '" is no suitable Keycloak resource owner'
+                'Resource owner "' . $user->getId() . '" is no suitable Keycloak resource owner', 2571410682
             );
         }
 
@@ -129,12 +137,12 @@ class Keycloak extends AbstractResourceServer
         array $authenticationInformation = [],
         ?PasswordHashInterface $saltingInstance = null
     ): array {
-        $userData = $user->toArray();
+        $user->toArray();
 
         if (!is_array($currentRecord)) {
             $currentRecord = [
                 'pid' => 0,
-                'password' => $saltingInstance->getHashedPassword(md5(uniqid()))
+                'password' => $saltingInstance->getHashedPassword(md5(uniqid())),
             ];
         }
 
@@ -145,51 +153,8 @@ class Keycloak extends AbstractResourceServer
                 'email' => $user->getEmail(),
                 'username' => $this->getUsernameFromUser($user),
                 'usergroup' => $this->keycloakDefaultGroups,
-                'options' => $this->userOption
+                'options' => $this->userOption,
             ]
         );
-    }
-
-    private function getUserGroupsForUser(
-        array $defaultUserGroups,
-        int $userLevel = 0,
-        string $table = 'be_groups'
-    ): string {
-        $userGroups = $defaultUserGroups;
-
-        if ($userLevel > 0) {
-            $tempGroups = $this->getUserGroupsForAccessLevel($userLevel, $table);
-            if (!empty($tempGroups)) {
-                $userGroups = $tempGroups;
-            }
-        }
-
-        return implode(',', $userGroups);
-    }
-
-    private function getUserGroupsForAccessLevel(int $level, string $table): array
-    {
-        // Try to find the user first by its OAuth Identifier
-        /** @var QueryBuilder $queryBuilder */
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getQueryBuilderForTable($table);
-        $queryBuilder
-            ->getRestrictions()
-            ->removeAll()
-            ->add(new DeletedRestriction());
-
-        $record = $queryBuilder
-            ->select('uid')
-            ->from($table)
-            ->where(
-                $queryBuilder->expr()->inSet(
-                    'gitlabGroup',
-                    $queryBuilder->createNamedParameter($level)
-                )
-            )
-            ->executeQuery()
-            ->fetchFirstColumn();
-
-        return empty($record) ? [] : array_values($record);
     }
 }

@@ -1,0 +1,44 @@
+name: Tests
+
+on: [pull_request, push]
+
+jobs:
+  testing:
+    name: Testing
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+
+      matrix:
+        php:
+          - '8.2'
+          - '8.3'
+          - '8.4'
+          - '8.5'
+
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+
+      - name: 'Lint PHP'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s lint
+
+      - name: 'Composer validate'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s composerValidate
+
+      - name: 'Install testing system'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s composerUpdate
+
+      - name: 'Composer normalize'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s composerNormalize -n
+
+      - name: 'CGL'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s cgl -n
+
+      - name: 'Run Rector'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s rector -n
+
+      - name: 'PHPStan'
+        run: Build/Scripts/runTests.sh -p ${{ matrix.php }} -s phpstan

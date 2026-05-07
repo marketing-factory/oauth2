@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the package mfd/typo3-fal-checker.
+ *
+ * For the full copyright and license information, please read the
+ * LICENSE file that was distributed with this source code.
+ */
+
 defined('TYPO3') || die();
 
 \TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addService(
@@ -15,7 +24,7 @@ defined('TYPO3') || die();
         'quality' => 50,
         'os' => '',
         'exec' => '',
-        'className' => \Mfc\OAuth2\Services\OAuth2LoginService::class
+        'className' => \Mfc\OAuth2\Services\OAuth2LoginService::class,
     ]
 );
 
@@ -28,6 +37,6 @@ if ($enableBackendLogin) {
         'provider' => \Mfc\OAuth2\LoginProvider\OAuth2LoginProvider::class,
         'sorting' => 25,
         'iconIdentifier' => 'mfc-oauth2-login',
-        'label' => 'LLL:EXT:oauth2/Resources/Private/Language/locallang.xlf:oauth2.login.link'
+        'label' => 'LLL:EXT:oauth2/Resources/Private/Language/locallang.xlf:oauth2.login.link',
     ];
 }
