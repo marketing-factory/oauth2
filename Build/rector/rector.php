@@ -12,6 +12,7 @@ declare(strict_types=1);
 use Rector\CodingStyle\Rector\Encapsed\EncapsedStringsToSprintfRector;
 use Rector\Config\RectorConfig;
 use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
+use Rector\TypeDeclaration\Rector\StmtsAwareInterface\SafeDeclareStrictTypesRector;
 use Rector\ValueObject\PhpVersion;
 use Ssch\TYPO3Rector\CodeQuality\General\ExtEmConfRector;
 use Ssch\TYPO3Rector\Configuration\Typo3Option;
@@ -57,4 +58,7 @@ return RectorConfig::configure()
         'Classes/Controller/Backend/ElementInformationController.php',
         '*Resources/*',
         '*Model/*',
+        SafeDeclareStrictTypesRector::class => [
+            'ext_emconf.php',
+        ],
     ]);
