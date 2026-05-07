@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 /*
  * This file is part of the package mfc/oauth2.
  *
@@ -9,6 +7,7 @@ declare(strict_types=1);
  * LICENSE file that was distributed with this source code.
  */
 
+/** @noinspection PhpUndefinedVariableInspection */
 $EM_CONF[$_EXTKEY] = [
     'title' => 'OAuth2 authentication and authorization',
     'description' => 'Generic OAuth 2.0 authentication and authorization for TYPO3 CMS',
