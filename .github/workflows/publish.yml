@@ -102,6 +102,6 @@ jobs:
       - name: Publish to TER
         run: |
           php ~/.composer/vendor/bin/tailor ter:publish \
-            --comment "${{ steps.get-comment.outputs.body }}" \
+            --comment "${{ steps.tag-message.outputs.body }}" \
             --artefact "${{ steps.download.outputs.download-path }}/${{ env.EXTENSION_ARTEFACT }}" \
             "${{ github.ref_name }}"
