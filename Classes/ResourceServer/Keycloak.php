@@ -34,12 +34,26 @@ class Keycloak extends AbstractResourceServer
      * @var list<string>
      */
     private array $keycloakDefaultGroups = [];
+    /**
+     * @var list<string>
+     */
+    private array $keycloakScopes = [];
+
+    private $mapKeycloakGroups;
+    private $isAdmin;
 
     public function __construct(array $arguments)
     {
         $this->providerName = $arguments['providerName'];
-        $this->keycloakDefaultGroups = GeneralUtility::trimExplode(',', $arguments['keycloakDefaultGroups'], true);
-        $this->userOption = (int)$arguments['keycloakUserOption'];
+        $this->keycloakDefaultGroups = $arguments['keycloakDefaultGroups'] ?? [];
+        $this->keycloakScopes = $arguments['keycloakScopes'] ?? [];
+        $this->userOption = (int)($arguments['keycloakUserOption'] ?? 0);
+        $this->mapKeycloakGroups = is_callable($arguments['groupMapping'])
+            ? $arguments['groupMapping']
+            : static fn(array $groups) => [];
+        $this->isAdmin = is_callable($arguments['isAdmin'])
+            ? $arguments['isAdmin']
+            : null;
 
         [$redirectUri] = $this->getRedirectUri($this->providerName);
         $this->oauthProviderConfiguration = [
@@ -78,7 +92,7 @@ class Keycloak extends AbstractResourceServer
         $this->oauthProvider = new KeycloakOAuthProvider($oauthProviderConfiguration);
 
         return [
-            $this->oauthProvider->getAuthorizationUrl([ 'scope' => ['profile', 'email', 'openid'] ]),
+            $this->oauthProvider->getAuthorizationUrl([ 'scope' => ['profile', 'email', 'openid', ...$this->keycloakScopes] ]),
             $this->oauthProvider->getState(),
             $nonceCookie,
         ];
@@ -138,7 +152,7 @@ class Keycloak extends AbstractResourceServer
         array $authenticationInformation = [],
         ?PasswordHashInterface $saltingInstance = null
     ): array {
-        $user->toArray();
+        $userData = $user->toArray();
 
         if (!is_array($currentRecord)) {
             $currentRecord = [
@@ -147,13 +161,17 @@ class Keycloak extends AbstractResourceServer
             ];
         }
 
+        if (is_callable($this->isAdmin)) {
+            $currentRecord['admin'] = call_user_func($this->isAdmin, $userData['groups'] ?? []) ? 1 : 0;
+        }
+
         /** @var KeycloakResourceOwner $user */
         return array_merge(
             $currentRecord,
             [
                 'email' => $user->getEmail(),
                 'username' => $this->getUsernameFromUser($user),
-                'usergroup' => $this->keycloakDefaultGroups,
+                'usergroup' => implode(',', call_user_func($this->mapKeycloakGroups, $userData['groups'] ?? [])),
                 'options' => $this->userOption,
             ]
         );
