@@ -13,8 +13,10 @@ namespace Mfc\OAuth2\Services;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
+use Mfc\OAuth2\Event\UserProfileUpdated;
 use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
 use Mfc\OAuth2\ResourceServer\Registry;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -50,7 +52,8 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
     public function __construct(
         private ResponseFactoryInterface $responseFactory,
         ExtensionConfiguration $extensionConfiguration,
-        private readonly ConnectionPool $connectionPool
+        private readonly ConnectionPool $connectionPool,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
         $this->extensionConfig = $extensionConfiguration->get('oauth2');
     }
@@ -314,6 +317,10 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
 
         $record = $this->resourceServer->updateUserRecord($user, $record, $this->authInfo, $saltingInstance);
 
+        $userProfileUpdated = new UserProfileUpdated($user, $record);
+        $this->eventDispatcher->dispatch($userProfileUpdated);
+        $record = $userProfileUpdated->userRecord;
+
         $queryBuilder = $this->getQueryBuilderForTable($this->authInfo['db_user']['table']);
         $queryBuilder
             ->insert($this->authInfo['db_user']['table'])
@@ -351,6 +358,10 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
         } else {
             $record = array_merge($record, ['oauth_identifier' => $this->resourceServer->getOAuthIdentifier($user)]);
         }
+
+        $userProfileUpdated = new UserProfileUpdated($user, $record);
+        $this->eventDispatcher->dispatch($userProfileUpdated);
+        $record = $userProfileUpdated->userRecord;
 
         // update user record
         $queryBuilder = $this->getQueryBuilderForTable($this->authInfo['db_user']['table']);

@@ -16,7 +16,6 @@ use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Stevenmaguire\OAuth2\Client\Provider\Keycloak as KeycloakOAuthProvider;
 use Stevenmaguire\OAuth2\Client\Provider\KeycloakResourceOwner;
 use TYPO3\CMS\Core\Crypto\PasswordHashing\PasswordHashInterface;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class Keycloak extends AbstractResourceServer
 {
