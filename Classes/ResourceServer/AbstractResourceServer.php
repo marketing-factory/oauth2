@@ -44,8 +44,11 @@ abstract class AbstractResourceServer implements ResourceServerInterface
             $requestTokenParameter = '&' . RequestToken::PARAM_NAME . '=' . $requestToken;
         }
 
+        $backendPath = trim($GLOBALS['TYPO3_CONF_VARS']['BE']['entryPoint'] ?? 'typo3');
+
         $redirectUri = GeneralUtility::locationHeaderUrl(
-            '/typo3/index.php?loginProvider=1529672977'
+            '/' . $backendPath
+            . '?loginProvider=1529672977'
             . '&login_status=login'
             . '&resource-server-identifier=' . $resourceServerIdentifier
             . $requestTokenParameter
