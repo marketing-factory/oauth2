@@ -47,7 +47,7 @@ abstract class AbstractResourceServer implements ResourceServerInterface
         $backendPath = trim($GLOBALS['TYPO3_CONF_VARS']['BE']['entryPoint'] ?? 'typo3');
 
         $redirectUri = GeneralUtility::locationHeaderUrl(
-            '/' . $backendPath . '/index.php'
+            '/' . $backendPath
             . '?loginProvider=1529672977'
             . '&login_status=login'
             . '&resource-server-identifier=' . $resourceServerIdentifier
