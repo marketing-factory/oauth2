@@ -56,6 +56,11 @@
       "Mfc\\OAuth2\\": "Classes/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Mfc\\OAuth2\\Tests\\": "Tests/"
+    }
+  },
   "config": {
     "allow-plugins": {
       "ergebnis/composer-normalize": true,

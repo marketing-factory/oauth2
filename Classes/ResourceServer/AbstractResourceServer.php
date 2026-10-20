@@ -18,6 +18,8 @@ use TYPO3\CMS\Core\Context\SecurityAspect;
 use TYPO3\CMS\Core\Http\ApplicationType;
 use TYPO3\CMS\Core\Http\CookieHeaderTrait;
 use TYPO3\CMS\Core\Http\NormalizedParams;
+use TYPO3\CMS\Core\Http\ServerRequestFactory;
+use TYPO3\CMS\Core\Routing\BackendEntryPointResolver;
 use TYPO3\CMS\Core\Security\Nonce;
 use TYPO3\CMS\Core\Security\RequestToken;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -44,8 +46,13 @@ abstract class AbstractResourceServer implements ResourceServerInterface
             $requestTokenParameter = '&' . RequestToken::PARAM_NAME . '=' . $requestToken;
         }
 
-        $redirectUri = GeneralUtility::locationHeaderUrl(
-            '/typo3/index.php?loginProvider=1529672977'
+        // Respects a custom backend entry point ($GLOBALS['TYPO3_CONF_VARS']['BE']['entryPoint'])
+        // and installations in a subdirectory, and avoids calling locationHeaderUrl()
+        // without a request, which is deprecated since TYPO3 v14.
+        $request = $GLOBALS['TYPO3_REQUEST'] ?? null;
+        $redirectUri = (string)GeneralUtility::makeInstance(BackendEntryPointResolver::class)->getUriFromRequest(
+            $request instanceof ServerRequestInterface ? $request : ServerRequestFactory::fromGlobals(),
+            'index.php?loginProvider=1529672977'
             . '&login_status=login'
             . '&resource-server-identifier=' . $resourceServerIdentifier
             . $requestTokenParameter
