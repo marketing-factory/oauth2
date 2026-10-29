@@ -28,11 +28,6 @@ class Keycloak extends AbstractResourceServer
     private readonly int $userOption;
 
     private bool $userDetailsLoaded = false;
-
-    /**
-     * @var list<string>
-     */
-    private array $keycloakDefaultGroups = [];
     /**
      * @var list<string>
      */
@@ -44,12 +39,11 @@ class Keycloak extends AbstractResourceServer
     public function __construct(array $arguments)
     {
         $this->providerName = $arguments['providerName'];
-        $this->keycloakDefaultGroups = $arguments['keycloakDefaultGroups'] ?? [];
         $this->keycloakScopes = $arguments['keycloakScopes'] ?? [];
         $this->userOption = (int)($arguments['keycloakUserOption'] ?? 0);
         $this->mapKeycloakGroups = is_callable($arguments['groupMapping'])
             ? $arguments['groupMapping']
-            : static fn(array $groups) => [];
+            : static fn(array $groups): array => [];
         $this->isAdmin = is_callable($arguments['isAdmin'])
             ? $arguments['isAdmin']
             : null;

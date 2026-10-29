@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Mfc\OAuth2\Event;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
