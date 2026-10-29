@@ -69,12 +69,10 @@ class Registry
         }
 
         $entry = &self::$registry[$identifier];
-        if ($entry['instance'] === null) {
-            $entry['instance'] = GeneralUtility::makeInstance(
-                $entry['className'],
-                $entry['options']['arguments']
-            );
-        }
+        $entry['instance'] ??= GeneralUtility::makeInstance(
+            $entry['className'],
+            $entry['options']['arguments']
+        );
 
         return $entry['instance'];
     }

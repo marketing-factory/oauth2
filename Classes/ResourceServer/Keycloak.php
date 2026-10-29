@@ -31,7 +31,7 @@ class Keycloak extends AbstractResourceServer
     /**
      * @var list<string>
      */
-    private array $keycloakScopes = [];
+    private readonly array $keycloakScopes;
 
     private $mapKeycloakGroups;
     private $isAdmin;
