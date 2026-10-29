@@ -13,6 +13,7 @@ namespace Mfc\OAuth2\Services;
 
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
+use Mfc\OAuth2\Event\UserLoginAttempted;
 use Mfc\OAuth2\Event\UserProfileUpdated;
 use Mfc\OAuth2\ResourceServer\AbstractResourceServer;
 use Mfc\OAuth2\ResourceServer\Registry;
@@ -110,7 +111,10 @@ class OAuth2LoginService extends AbstractAuthenticationService implements Logger
             $resourceOwner = $this->getResourceOwner($this->accessToken);
 
             if ($this->accessToken instanceof AccessToken && $this->resourceServer->userIsActive($resourceOwner)) {
-                $result = 200;
+                $event = $this->eventDispatcher->dispatch(new UserLoginAttempted($resourceOwner, $userRecord));
+                if (!$event->isDenied()) {
+                    $result = 200;
+                }
             }
         }
 
