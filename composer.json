@@ -2,7 +2,7 @@
   "name": "mfc/oauth2",
   "description": "Generic OAuth2 authentication and authorization for TYPO3 CMS",
   "license": [
-    "GPL-2.0-or-later"
+    "GPL-3.0-or-later"
   ],
   "type": "typo3-cms-extension",
   "keywords": [
@@ -32,6 +32,11 @@
     }
   ],
   "homepage": "https://www.marketing-factory.de",
+  "support": {
+	"issues": "https://github.com/marketing-factory/oauth2/issues",
+	"source": "https://github.com/marketing-factory/oauth2",
+	"security": "https://github.com/marketing-factory/oauth2/blob/main/SECURITY.md"
+  },
   "require": {
     "php": "^8.2",
     "league/oauth2-client": "^2.6",

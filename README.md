@@ -115,7 +115,7 @@ $GLOBALS['TYPO3_CONF_VARS']['BE']['cookieSameSite'] = 'lax'
 
 ## 3. License
 
-mfc/oauth2 is released under the terms of the [GPL-2 License](LICENSE.md).
+mfc/oauth2 is released under the terms of the [GPL-3 License](LICENSE.md).
 
 ## 4. Support
 
