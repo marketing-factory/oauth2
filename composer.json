@@ -65,8 +65,8 @@
     "allow-plugins": {
       "ergebnis/composer-normalize": true,
       "php-http/discovery": true,
-      "typo3/class-alias-loader": false,
-      "typo3/cms-composer-installers": false
+      "typo3/class-alias-loader": true,
+      "typo3/cms-composer-installers": true
     },
     "bin-dir": ".Build/bin",
     "sort-packages": true,
