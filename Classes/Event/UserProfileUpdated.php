@@ -9,6 +9,5 @@ class UserProfileUpdated
     public function __construct(
         public ResourceOwnerInterface $resourceOwner,
         public array $userRecord,
-    ) {
-    }
+    ) {}
 }
